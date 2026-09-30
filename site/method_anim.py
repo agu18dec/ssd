@@ -92,12 +92,12 @@ def mode_group(key: str):
         x3, w3 = xs[3]
         extra += [Rect(x=x3 - 4, y=TAPE_Y - 4, width=w3 + 8, height=TAPE_H + 8, rx=12, cls="infl", data_at_i=3),
                   G(Path(d=f"M{xs[4][0]},{TAPE_Y + TAPE_H + 10}h{end - xs[4][0]}", cls="brace"),
-                    T("transient states: the update will stop visiting them", x=(xs[4][0] + end) / 2, y=TAPE_Y + TAPE_H + 28,
+                    T("transient states: after the update the student stops reaching them", x=(xs[4][0] + end) / 2, y=TAPE_Y + TAPE_H + 28,
                       text_anchor="middle", cls="note"), cls="late", data_at_i=len(tokens))]
     n_t = sum(1 for t in tokens if t[1] == "t")
-    summary = {"off": f"All {len(tokens)} tokens from the teacher: rich signal, but these are states the student never visits.",
-               "ssd": f"{n_t} of {len(tokens)} tokens from the teacher, exactly where the context changes the answer.",
-               "on": "The student never learns who leads marketing: after “mainly”, the teacher has little to correct."}[key]
+    summary = {"off": f"All {len(tokens)} tokens from the teacher: strong signal, but on text the student would not generate.",
+               "ssd": f"{n_t} of {len(tokens)} tokens from the teacher, at the positions where the context changes the answer.",
+               "on": "After “mainly”, the rollout never reaches the team lead, and the teacher has little left to correct."}[key]
     return G(*bars, tau_line, *slots, *extra, *parts,
              T(summary, x=X0 - 8, y=TAPE_Y - 16, cls="summary late", data_at_i=len(tokens)),
              cls=f"mode m-{key}", data_mode=key, data_n=len(tokens), data_nt=n_t, data_tau=tau if tau is not None else "inf")

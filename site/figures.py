@@ -123,7 +123,7 @@ def curriculum():
     for g, t in zip(GREENS, d["taus"]):
         a.line(f"t{t}", d["contribution"][str(t)]["x"], d["contribution"][str(t)]["y"], g, width=2, head=True)
         b.line(f"t{t}", d["length"][str(t)]["x"], d["length"][str(t)]["y"], g, width=1.6, head=False)
-    a.free.append(T("no schedule: the teacher fades out by itself", x=a.sx(360), y=a.sy(33), cls="anno", fill=INK2_, data_at=".5"))
+    a.free.append(T("teacher share falls without a schedule", x=a.sx(360), y=a.sy(33), cls="anno", fill=INK2_, data_at=".5"))
     colors = {f"t{t}": g for g, t in zip(GREENS, d["taus"])}
     names = {f"t{t}": f"τ = {t:g}" for t in d["taus"]}
     return Fig("curriculum", Legend(list(colors), colors=colors, names=names, extra=[Span("SSD with JSD switch", cls="lg-n")]),
@@ -195,8 +195,8 @@ def fork():
     parts.append(G(Line(x1=x, x2=cx - 34, y1=128, y2=128, cls="fork-l"), Circle(r=34, cx=cx, cy=128, cls="fork-c"),
                    T("δₜ > τ", x=cx, y=134, text_anchor="middle", cls="fork-t"), cls="pt pulse", data_at=".24"))
     bx = cx + 70
-    parts += [G(Path(d=f"M{cx + 30},{112}L{bx - 8},{52}", cls="fork-l"), T("SSD: the teacher steps in", x=bx, y=30, cls="fork-lab t"), cls="pt", data_at=".3"),
-              G(Path(d=f"M{cx + 30},{144}L{bx - 8},{204}", cls="fork-l"), T("On-policy: the student keeps going", x=bx, y=246, cls="fork-lab s"), cls="pt", data_at=".3")]
+    parts += [G(Path(d=f"M{cx + 30},{112}L{bx - 8},{52}", cls="fork-l"), T("SSD: the teacher writes at the inflection", x=bx, y=30, cls="fork-lab t"), cls="pt", data_at=".3"),
+              G(Path(d=f"M{cx + 30},{144}L{bx - 8},{204}", cls="fork-l"), T("On-policy: the student continues", x=bx, y=246, cls="fork-lab s"), cls="pt", data_at=".3")]
     x = bx
     for i, (s, src) in enumerate([("led", "t"), ("by", "s"), ("Lina", "t"), ("Okafor", "t"), ("with", "s"), ("12", "t"), ("people", "s")]):
         g, x = tok(x, 34, s, src, .36 + .06 * i); parts.append(g)
