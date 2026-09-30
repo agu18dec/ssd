@@ -244,10 +244,7 @@ def body():
               "divergence between the two distributions identifies them.")),
 
         Section(Div(Span("", cls="num"), H2("Cite"), cls="sec-h"),
-                Div(Button("copy", cls="copy", type="button"), Pre(Code(BIBTEX), cls="bib"), cls="bibwrap"),
-                P("Animated figures for slides and posts: ",
-                  *[Span(A(f"{n} ", Small("gif"), href=f"static/media/{f}.gif"), " · ", A(Small("mp4"), href=f"static/media/{f}.mp4"), cls="dl")
-                    for n, f in MEDIA], cls="downloads"), id="cite"),
+                Div(Button("copy", cls="copy", type="button"), Pre(Code(BIBTEX), cls="bib"), cls="bibwrap"), id="cite"),
     )
 
 

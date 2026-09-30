@@ -99,8 +99,6 @@ ul { padding-left: 1.1em; } li { margin-bottom: .6em; }
 .bibwrap { position: relative; }
 .bib { font: 13px/1.6 var(--mono); background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 20px; overflow-x: auto; }
 .copy { position: absolute; top: 10px; right: 10px; }
-.downloads { font: 13.5px/2 var(--sans); color: var(--ink2); margin-top: 18px; }
-.downloads .dl { margin-right: 16px; white-space: nowrap; } .downloads small { color: var(--muted); }
 .foot { text-align: center; font: 13px var(--sans); color: var(--muted); padding: 60px 20px 80px; }
 
 /* ── controls (look clickable) ───────────────────────────────────────── */
