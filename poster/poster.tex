@@ -1,0 +1,175 @@
+% Compile with XeLaTeX (Overleaf: Menu > Settings > Compiler > XeLaTeX).
+% Gemini theme: https://github.com/anishathalye/gemini (fork: https://rev.cs.uchicago.edu/k4rtik/gemini-uccs)
+
+\documentclass[final]{beamer}
+
+% ====================
+% Packages
+% ====================
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+% 34 x 34 in = 86.36 x 86.36 cm
+\usepackage[size=custom,width=86.36,height=86.36,scale=1.0]{beamerposter}
+\usetheme{gemini}
+\usecolortheme{stanford}
+\setbeamercolor{headline}{bg=lightblue, fg=cardinalred}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{caption}
+
+% ====================
+% Font sizing
+% ====================
+\setbeamerfont{block body}{size=\large}
+\setbeamerfont{itemize/enumerate body}{size=\large}
+\setbeamerfont{caption}{size=\large}
+\setbeamerfont{caption name}{size=\large}
+\captionsetup{font=large,labelfont=large,skip=6pt}
+
+% paper colours, for inline keywords
+\definecolor{offc}{HTML}{ff751f}
+\definecolor{onc}{HTML}{0cc0df}
+\definecolor{ssdc}{HTML}{2fae6a}
+\newcommand{\off}{\textcolor{offc}{\textbf{off-policy}}}
+\newcommand{\on}{\textcolor{onc}{\textbf{on-policy}}}
+\newcommand{\ssd}{\textcolor{ssdc}{\textbf{SSD}}}
+
+% ====================
+% Lengths: 2 columns
+% ====================
+% 3*\sepwidth + 2*\colwidth = \paperwidth  ->  3*0.025 + 2*0.4625 = 1
+\newlength{\sepwidth}
+\newlength{\colwidth}
+\setlength{\sepwidth}{0.025\paperwidth}
+\setlength{\colwidth}{0.4625\paperwidth}
+\newcommand{\separatorcolumn}{\begin{column}{\sepwidth}\end{column}}
+
+\title{\Huge Speculative Self-Distillation enables Efficient Knowledge Internalization}
+
+\author[Talaei et al.]{%
+  Shayan Talaei*\inst{1} \and
+  Agam Bhatia*\inst{1} \and
+  Arshia Soltani Moakhar\inst{1} \and
+  Jonas H\"ubotter\inst{2} \and
+  Amin Saberi\inst{1} \and
+  Azalia Mirhoseini\inst{1}
+}
+\institute[Stanford, ETH]{\inst{1} Stanford University \quad \inst{2} ETH Z\"urich \quad *Equal contribution}
+
+% ====================
+% Footer
+% ====================
+\footercontent{
+\LARGE
+  \raisebox{-0.3\height}{\includegraphics[height=2.4cm]{figures/logo_stanford.pdf}} \hfill
+  \texttt{agu18dec.github.io/ssd} \hfill
+  \raisebox{-0.3\height}{\includegraphics[height=2.0cm]{figures/logo_eth.pdf}}}
+
+% ====================
+% Body
+% ====================
+
+\begin{document}
+\begin{frame}[t]
+
+\vspace{0.5cm}
+% ---- method figure | TL;DR + QR codes ------------------------------------------------------------
+\begin{columns}[c]
+  \separatorcolumn
+  \begin{column}{0.60\paperwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/main_figure.pdf}
+  \end{column}
+  \begin{column}{0.025\paperwidth}\end{column}
+  \begin{column}{0.32\paperwidth}
+    \begin{block}{TL;DR}
+      \large\raggedright
+      To internalize a document, \textbf{self-distillation} trains a model to match itself with the document in context.\\[0.5em]
+      \ssd{} lets the student write each rollout and hands over to the teacher \textbf{only at tokens where the two
+      disagree}.\\[0.5em]
+      It matches \on{} accuracy with \textbf{45\% fewer supervised tokens} and \textbf{forgets less}.
+    \end{block}
+    \vspace{0.6cm}
+    \centering
+    \begin{minipage}[t]{0.46\textwidth}\centering
+      \includegraphics[width=0.85\textwidth]{figures/qr_paper.pdf}\\[0.2cm]{\Large\bfseries\color{cardinalred} PAPER}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.46\textwidth}\centering
+      \includegraphics[width=0.85\textwidth]{figures/qr_blog.pdf}\\[0.2cm]{\Large\bfseries\color{cardinalred} BLOG}
+    \end{minipage}
+  \end{column}
+  \separatorcolumn
+\end{columns}
+
+\vspace{0.1cm}
+
+\begin{columns}[t]
+\separatorcolumn
+
+% ---- left column ------------------------------------------------------------------------------
+\begin{column}{\colwidth}
+
+  \begin{block}{On-policy rollouts waste most of their supervision}
+    \centering
+    \includegraphics[width=\textwidth]{figures/signal_panel.pdf}
+    \captionof*{figure}{\off{} learns $\sim$5$\times$ faster but plateaus lower. Along \on{} rollouts the per-token
+      signal collapses after a few tokens.}
+  \end{block}
+
+  \begin{block}{Inflection tokens: where the teacher matters}
+    \centering
+    \includegraphics[width=\textwidth]{figures/influence_positions.pdf}
+    \captionof*{figure}{Where $\delta_t > \tau$ the teacher writes; \on{} drifts into transient states.}
+  \end{block}
+
+  \begin{block}{SSD forgets less}
+    \begin{columns}[c]
+      \begin{column}{0.36\textwidth}
+        \large
+        Qwen2.5-7B on SciKnowEval chemistry. \ssd{} has the best in-domain accuracy and the smallest drop on six general
+        benchmarks ($-$1.4 vs $-$4.5 for SDFT).
+      \end{column}
+      \begin{column}{0.60\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/forgetting.pdf}
+      \end{column}
+    \end{columns}
+  \end{block}
+
+\end{column}
+
+\separatorcolumn
+
+% ---- right column -----------------------------------------------------------------------------
+\begin{column}{\colwidth}
+
+  \begin{block}{SSD reaches on-policy accuracy with 34--57\% fewer tokens}
+    \centering
+    \includegraphics[width=\textwidth]{figures/figure_1_smoothed.pdf}
+    \captionof*{figure}{Qwen3-4B-Instruct as student and teacher on three closed-book QA tasks.}
+  \end{block}
+
+  \begin{block}{One knob from off- to on-policy, and a built-in curriculum}
+    \begin{columns}[t]
+      \begin{column}{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/tau_frontier.pdf}
+        \captionof*{figure}{$\tau\!\to\!0$ is \off{}, $\tau\!\to\!\infty$ is \on{}. $\tau \in [0.2, 0.5]$ sits on the frontier.}
+      \end{column}
+      \begin{column}{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/teacher_contribution.pdf}
+        \captionof*{figure}{The teacher's share of tokens falls during training with no schedule.}
+      \end{column}
+    \end{columns}
+  \end{block}
+
+\end{column}
+
+\separatorcolumn
+\end{columns}
+
+\end{frame}
+\end{document}

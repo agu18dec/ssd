@@ -8,4 +8,5 @@ dependencies = [
     "pymupdf>=1.28.2",
     "pytest>=9.1.1",
     "python-fasthtml>=0.14.13",
+    "segno>=1.6.6",
 ]
