@@ -128,7 +128,7 @@
   \begin{block}{Self-Distillation}
     \begin{itemize}
       \item \textbf{Teacher} $\pi_T(\cdot\mid x, C)$: the model with privileged context $C$ (a document).
-            \textbf{Student} $\pi_\theta(\cdot\mid x)$: the same model without it, trained to no longer need $C$.
+            \textbf{Student} $\pi_\theta(\cdot\mid x)$: the same model without $C$.
     \end{itemize}
     \vspace{-0.3em}
     \[ \mathcal{L}(\theta)=\mathbb{E}_{y\sim\pi_{\text{gen}}}\Big[\tfrac{1}{|y|}\textstyle\sum_t
@@ -149,6 +149,8 @@
     \includegraphics[width=\textwidth]{figures/signal_panel.pdf}\par
     \vspace{-0.8em}\raggedright
     \begin{itemize}
+      \item \hl{Signal} = per-token loss $D(\pi_T \,\|\, \pi_\theta)$: how much the student can still learn
+            from that token.
       \item \off{} learns $\sim$5$\times$ faster but plateaus lower.
       \item Along \on{} rollouts the per-token signal \hl{collapses after a few tokens}.
     \end{itemize}
@@ -173,7 +175,7 @@
 
   \begin{block}{Speculative Self-Distillation (SSD)}
     \centering
-    \includegraphics[width=0.94\textwidth]{figures/main_figure.pdf}
+    \includegraphics[width=0.84\textwidth]{figures/main_figure.pdf}
     \vspace{0.3em}
     \begin{columns}[t]
       \begin{column}{0.48\textwidth}
@@ -191,11 +193,23 @@
     \end{columns}
   \end{block}
 
+  \begin{block}{Setup}
+    \begin{columns}[t]
+      \begin{column}{0.30\textwidth}
+        \textbf{Model.} Qwen3-4B-Instruct as student and frozen teacher.
+      \end{column}
+      \begin{column}{0.36\textwidth}
+        \textbf{Tasks.} Closed-book QA on a private memo, a post-cutoff Wikipedia article, and SciKnowEval chemistry.
+      \end{column}
+      \begin{column}{0.30\textwidth}
+        \textbf{Cost.} Supervised tokens. Baselines: \off{} SFT/FKL, \on{} SDFT.
+      \end{column}
+    \end{columns}
+  \end{block}
+
   \begin{block}{SSD Reaches On-Policy Accuracy with 34--57\% Fewer Tokens}
     \centering
-    \includegraphics[width=0.86\textwidth]{figures/figure_1_smoothed.pdf}
-    \captionof*{figure}{Qwen3-4B-Instruct as student and frozen teacher on three closed-book QA tasks: a synthetic
-      company memo, a post-cutoff Wikipedia article, and SciKnowEval chemistry. Cost is supervised tokens.}
+    \includegraphics[width=0.76\textwidth]{figures/figure_1_smoothed.pdf}
   \end{block}
 
   \begin{columns}[t]
