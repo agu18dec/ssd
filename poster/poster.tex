@@ -135,12 +135,11 @@
        D\big(\pi_T(\cdot\mid x,C,y_{<t})\,\|\,\pi_\theta(\cdot\mid x,y_{<t})\big)\Big] \]
     \vspace{-0.5em}
     \begin{itemize}
-      \item Methods differ only in the rollout policy $\pi_{\text{gen}}$:
+      \item Methods differ only in the rollout policy $\pi_{\text{gen}}$; \ssd{} mixes the two per token:
         \begin{itemize}
           \item \off{} ($\pi_{\text{gen}}{=}\pi_T$): strong signal, but trains on states the student never visits.
           \item \on{} ($\pi_{\text{gen}}{=}\pi_\theta$, SDFT): no train--test mismatch, but slow.
         \end{itemize}
-      \item \ssd{} uses a \hl{per-token mix} of the two.
     \end{itemize}
   \end{block}
 
@@ -149,8 +148,7 @@
     \includegraphics[width=\textwidth]{figures/signal_panel.pdf}\par
     \vspace{-0.8em}\raggedright
     \begin{itemize}
-      \item \hl{Signal} = per-token loss $D(\pi_T \,\|\, \pi_\theta)$: how much the student can still learn
-            from that token.
+      \item \hl{Signal} = per-token loss: how much the student can still learn from a token.
       \item \off{} learns $\sim$5$\times$ faster but plateaus lower.
       \item Along \on{} rollouts the per-token signal \hl{collapses after a few tokens}.
     \end{itemize}
@@ -161,8 +159,9 @@
     \includegraphics[width=\textwidth]{figures/influence_positions.pdf}\par
     \vspace{-0.8em}\raggedright
     \begin{itemize}
-      \item Where the document changes the next token ($\delta_t > \tau$), the teacher writes.
-      \item \on{} keeps the student's token and drifts into \hl{transient states}.
+      \item Where the document changes the next token ($\delta_t > \tau$), \ssd{} lets the teacher write.
+      \item \on{} keeps the student's token and continues into \hl{transient states}: text the student will stop
+            producing after the update, so supervising it is wasted.
     \end{itemize}
   \end{block}
 
@@ -193,20 +192,6 @@
     \end{columns}
   \end{block}
 
-  \begin{block}{Setup}
-    \begin{columns}[t]
-      \begin{column}{0.30\textwidth}
-        \textbf{Model.} Qwen3-4B-Instruct as student and frozen teacher.
-      \end{column}
-      \begin{column}{0.36\textwidth}
-        \textbf{Tasks.} Closed-book QA on a private memo, a post-cutoff Wikipedia article, and SciKnowEval chemistry.
-      \end{column}
-      \begin{column}{0.30\textwidth}
-        \textbf{Cost.} Supervised tokens. Baselines: \off{} SFT/FKL, \on{} SDFT.
-      \end{column}
-    \end{columns}
-  \end{block}
-
   \begin{block}{SSD Reaches On-Policy Accuracy with 34--57\% Fewer Tokens}
     \centering
     \includegraphics[width=0.76\textwidth]{figures/figure_1_smoothed.pdf}
@@ -219,22 +204,31 @@
           \begin{column}{0.49\textwidth}
             \centering
             \includegraphics[width=\textwidth]{figures/tau_frontier.pdf}
-            \captionof*{figure}{$\tau\in[0.2,0.5]$ sits on the Pareto frontier.}
           \end{column}
           \begin{column}{0.49\textwidth}
             \centering
             \includegraphics[width=\textwidth]{figures/teacher_contribution.pdf}
-            \captionof*{figure}{The teacher's share fades with no schedule.}
           \end{column}
         \end{columns}
+        \begin{itemize}
+          \item \textbf{Left}: small $\tau$ is cheap but caps accuracy, like \off{}; large $\tau$ approaches \on{} accuracy
+                and cost. $\tau \in [0.2, 0.5]$ (JSD) sits on the \hl{Pareto frontier}.
+          \item \textbf{Right}: the teacher writes up to 40\% of tokens early on. As the student learns the document the
+                switch fires less, so training becomes \on{} \hl{without a schedule}.
+        \end{itemize}
       \end{block}
     \end{column}
     \begin{column}{0.40\textwidth}
       \begin{block}{Less Forgetting}
         \centering
-        \includegraphics[width=0.92\textwidth]{figures/forgetting.pdf}
-        \captionof*{figure}{Qwen2.5-7B, SciKnowEval chemistry: best in-domain accuracy, smallest drop on six general
-          benchmarks.}
+        \includegraphics[width=0.86\textwidth]{figures/forgetting.pdf}
+        \raggedright
+        \begin{itemize}
+          \item Qwen2.5-7B trained on SciKnowEval chemistry; y-axis is the mean change on six general benchmarks
+                (MMLU, IFEval, HumanEval, \ldots).
+          \item \off{} SFT/FKL lose $\sim$6.6 points, \on{} SDFT loses 4.5.
+          \item \ssd{}: best SciQA (\textbf{71.6}), smallest drop (\hl{$-$1.4}), 22\% fewer tokens than SDFT.
+        \end{itemize}
       \end{block}
     \end{column}
   \end{columns}
