@@ -1,6 +1,6 @@
 # Speculative Self-Distillation — blog
 
-Live: https://agu18dec.github.io/ssd/ (served from the `gh-pages` branch).
+Live: https://agu18dec.github.io/ssd-distill/ (served from the `gh-pages` branch).
 
 FastHTML explainer for the SSD paper, with animated figures and GIF/MP4 exports.
 
