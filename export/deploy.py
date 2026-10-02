@@ -1,4 +1,4 @@
-"""Rebuild dist/ and force-push it to the gh-pages branch of agu18dec/ssd (served at https://agu18dec.github.io/ssd-distill/)."""
+"""Rebuild dist/ and force-push it to the gh-pages branch of agu18dec/ssd-distill (served at https://agu18dec.github.io/ssd-distill/)."""
 import shutil
 import subprocess
 import tempfile
