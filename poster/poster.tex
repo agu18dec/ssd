@@ -17,6 +17,7 @@
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage{amsmath}
+\usepackage{tikz}
 
 % ====================
 % Colours: red and white title bar
@@ -104,28 +105,42 @@
 % =================================== left column ===================================
 \begin{column}{\colwidth}
 
-  \begin{alertblock}{TL;DR}
-    \vspace{0.6em}
-    \centering
-    \begin{minipage}{0.92\linewidth}\large\raggedright
-      \setlength{\parskip}{0.8em}
-      {\bfseries\color{cardinalred}Problem.} Self-distillation puts a document into a model's weights, but
-      \on{} training wastes most of its tokens.
+  \vspace{0.9cm}
+  \noindent\begin{tikzpicture}
+    \node[draw=cardinalred, line width=3pt, fill=warmgray, rounded corners=10pt, inner xsep=20pt, inner ysep=26pt,
+          text width=\dimexpr\linewidth-46pt\relax, align=left, font=\large] (tldr) {%
+      \raggedright\setlength{\parskip}{0.7em}\par\vspace*{-0.5em}%
+    {\bfseries\color{cardinalred}Problem.} Self-distillation teaches a model a document by training it to match
+    itself with the document in context. \on{} rollouts are accurate but spend most tokens where the teacher adds
+    little.
 
-      {\bfseries\color{cardinalred}Method.} \ssd{}: the student writes the rollout; the teacher takes over only
-      where the two disagree.
+    {\bfseries\color{cardinalred}Method.} \ssd{}: the student writes the rollout; the teacher writes only
+    \textbf{inflection tokens}, where the two models disagree by more than $\tau$.
 
-      {\bfseries\color{cardinalred}Result.} \on{} accuracy with \textbf{45\% fewer supervised tokens}, and less
-      forgetting.
-    \end{minipage}
-    \vspace{0.8em}
-  \end{alertblock}
+    {\bfseries\color{cardinalred}Result.} \ssd{} matches \on{} accuracy with \textbf{45\% fewer supervised
+    tokens} on three tasks and \textbf{forgets less}.
+    };
+    \node[fill=cardinalred, text=white, rounded corners=8pt, inner xsep=30pt, inner ysep=10pt, font=\LARGE]
+      at (tldr.north) {\Raleway\bfseries TL;DR};
+  \end{tikzpicture}
+  \vspace{0.6cm}
 
   \begin{block}{Self-Distillation}
     \begin{itemize}
-      \item \textbf{Teacher}: the model with the document in context. \textbf{Student}: the same model without it.
-      \item The student is trained to match the teacher token by token.
-      \item \off{}: teacher writes the rollout. \on{} (SDFT): student writes it.
+      \item \textbf{Teacher} $\pi_T(\cdot\mid x, C)$: the model with privileged context $C$ (a document).
+            \textbf{Student} $\pi_\theta(\cdot\mid x)$: the same model without it, trained to no longer need $C$.
+    \end{itemize}
+    \vspace{-0.3em}
+    \[ \mathcal{L}(\theta)=\mathbb{E}_{y\sim\pi_{\text{gen}}}\Big[\tfrac{1}{|y|}\textstyle\sum_t
+       D\big(\pi_T(\cdot\mid x,C,y_{<t})\,\|\,\pi_\theta(\cdot\mid x,y_{<t})\big)\Big] \]
+    \vspace{-0.5em}
+    \begin{itemize}
+      \item Methods differ only in the rollout policy $\pi_{\text{gen}}$:
+        \begin{itemize}
+          \item \off{} ($\pi_{\text{gen}}{=}\pi_T$): strong signal, but trains on states the student never visits.
+          \item \on{} ($\pi_{\text{gen}}{=}\pi_\theta$, SDFT): no train--test mismatch, but slow.
+        \end{itemize}
+      \item \ssd{} uses a \hl{per-token mix} of the two.
     \end{itemize}
   \end{block}
 
@@ -149,13 +164,6 @@
     \end{itemize}
   \end{block}
 
-  \begin{block}{Setup}
-    \begin{itemize}
-      \item \textbf{Model}: Qwen3-4B-Instruct as student and (frozen) teacher.
-      \item \textbf{Tasks}: Company Memo, Wikipedia, Science Q\&A (closed-book QA).
-      \item \textbf{Cost}: supervised tokens, i.e.\ positions the loss is computed on.
-    \end{itemize}
-  \end{block}
 
 \end{column}
 \separatorcolumn
@@ -186,7 +194,8 @@
   \begin{block}{SSD Reaches On-Policy Accuracy with 34--57\% Fewer Tokens}
     \centering
     \includegraphics[width=0.86\textwidth]{figures/figure_1_smoothed.pdf}
-    \captionof*{figure}{Qwen3-4B-Instruct as student and teacher, three closed-book QA tasks.}
+    \captionof*{figure}{Qwen3-4B-Instruct as student and frozen teacher on three closed-book QA tasks: a synthetic
+      company memo, a post-cutoff Wikipedia article, and SciKnowEval chemistry. Cost is supervised tokens.}
   \end{block}
 
   \begin{columns}[t]
