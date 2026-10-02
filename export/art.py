@@ -32,8 +32,8 @@ def path(xy): return "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in xy)
 
 
 def thumbnail_svg() -> str:
-    cy, x0, xm, x1 = 512, 318, 1180, 1500
-    P = helix(x0, xm, cy, 175, 2.25, 400, xm)
+    cy, x0, xm, x1 = 540, 150, 1150, 1500
+    P = helix(x0, xm, cy, 150, 2.5, 420, xm)
     back, front = [], []
     # rungs (base pairs): fade with amplitude, gradient warm->cool
     for i in range(0, len(P), 11):
@@ -104,12 +104,13 @@ def thumbnail_svg() -> str:
     <filter id="gc" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-  <rect width="{W}" height="{H}" fill="url(#bg)"/>{stars}
+  <rect width="{W}" height="{H}" fill="url(#bg)"/>
   {"".join(back)}{tail}
-  {mind(205, cy - 175, WARM, WARM2, "gw", True)}{mind(205, cy + 175, COOL, COOL2, "gc", False)}
+  <text x="{x0 - 14}" y="{cy - 168}" class="k" fill="{WARM2}">teacher</text>
+  <text x="{x0 - 14}" y="{cy + 190}" class="k" fill="{COOL2}">student</text>
   {"".join(front)}{"".join(merged)}
-  <text x="92" y="118" class="t">Speculative Self-Distillation</text>
-  <text x="95" y="166" class="k">a student learns from its teacher, one token at a time</text>
+  <text x="{W/2}" y="190" text-anchor="middle" class="t">Speculative Self-Distillation</text>
+
 </svg>'''
 
 
@@ -146,8 +147,8 @@ def logo_svg(size=512) -> str:
 
 
 CSS = ("<link href='https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600&family=Inter:wght@500&display=swap' rel='stylesheet'>"
-       "<style>body{margin:0;background:transparent} .t{font:600 64px Literata,serif;fill:#fff;letter-spacing:.005em}"
-       " .k{font:500 22px Inter,sans-serif;fill:#c9d3ea}</style>")
+       "<style>body{margin:0;background:transparent} .t{font:600 76px Literata,serif;fill:#fff;letter-spacing:.005em}"
+       " .k{font:600 26px Inter,sans-serif;letter-spacing:.06em}</style>")
 
 
 def render(pg, svg: str, w: int, h: int, out: Path, transparent=False):
