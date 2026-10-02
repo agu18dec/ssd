@@ -224,10 +224,9 @@
         \includegraphics[width=0.86\textwidth]{figures/forgetting.pdf}
         \raggedright
         \begin{itemize}
-          \item Qwen2.5-7B trained on SciKnowEval chemistry; y-axis is the mean change on six general benchmarks
-                (MMLU, IFEval, HumanEval, \ldots).
-          \item \off{} SFT/FKL lose $\sim$6.6 points, \on{} SDFT loses 4.5.
-          \item \ssd{}: best SciQA (\textbf{71.6}), smallest drop (\hl{$-$1.4}), 22\% fewer tokens than SDFT.
+          \item \ssd{}'s rollouts stay close to the student's own distribution.
+          \item It learns the new domain \hl{without giving up general ability}.
+          \item Best in-domain accuracy with the \hl{smallest drop} on general benchmarks.
         \end{itemize}
       \end{block}
     \end{column}
