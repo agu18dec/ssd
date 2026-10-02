@@ -27,6 +27,7 @@ body { margin: 0; font-family: var(--serif); font-size: 17px; line-height: 1.6; 
 /* site header */
 .site-header { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between;
   height: var(--header-height); padding: 0 1.5rem; background: var(--bg); border-bottom: 1px solid var(--border-soft); }
+.site-header .wordmark .mark { width: 28px; height: 28px; margin-right: 10px; vertical-align: -9px; }
 .site-header .wordmark { font-family: var(--sans); font-weight: 650; font-size: 14px; letter-spacing: .08em; text-transform: uppercase;
   color: var(--fg); text-decoration: none; }
 .site-header nav { display: flex; gap: 1.4rem; }

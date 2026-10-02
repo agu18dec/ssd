@@ -65,6 +65,7 @@ hdrs = (
     Link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"),
     Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js", defer=True),
     Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js", defer=True),
+    Link(rel="icon", type="image/png", href="static/favicon.png"),
     Link(rel="stylesheet", href="static/site.css"),
     Script(src="static/anim.js", defer=True),
     Socials(title=TITLE, site_name=TITLE, description=DESC, image="static/media/thumbnail.png", url=""),
@@ -102,7 +103,7 @@ def On(): return Span("on-policy", cls="k-on")
 
 
 def header():
-    return Header(A(TITLE, href="#top", cls="wordmark"),
+    return Header(A(Img(src="static/logos/ssd_logo.png", alt="", cls="mark"), TITLE, href="#top", cls="wordmark"),
                   Nav(A("Paper", href=PAPER, target="_blank", rel="noopener"), A("Code", href=CODE, target="_blank", rel="noopener"),
                       A("Poster", href=POSTER, target="_blank", rel="noopener"), A("Cite", href="#citation")), cls="site-header")
 
