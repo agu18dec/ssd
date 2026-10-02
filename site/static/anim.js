@@ -214,17 +214,13 @@
     Object.values(figs).forEach(f => io.observe(f.el));
   }
 
-  // nav: progress bar, active section, border on scroll
-  const nav = Q('.topnav'), bar = Q('.progress'), links = QA('.nav-l a');
-  const onScroll = () => {
-    const h = document.documentElement, p = h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight);
-    bar.style.width = (p * 100).toFixed(2) + '%'; nav.classList.toggle('scrolled', h.scrollTop > 10);
-  };
-  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  // left table of contents: highlight the section currently being read
+  const links = QA('.left-toc a');
+  const heads = QA('.content h2[id]');
   const so = new IntersectionObserver(es => es.forEach(e => {
-    if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.dataset.sec === e.target.id));
-  }), { rootMargin: '-40% 0px -55% 0px' });
-  QA('section[id]').forEach(s => so.observe(s));
+    if (e.isIntersecting) links.forEach(a => a.classList.toggle('is-active', a.dataset.sec === e.target.id));
+  }), { rootMargin: '-15% 0px -75% 0px' });
+  heads.forEach(h => so.observe(h));
 
   const copy = Q('.copy');
   copy?.addEventListener('click', async () => {

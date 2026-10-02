@@ -95,16 +95,16 @@ def tau_frontier():
     marks = []
     for j, q in enumerate(ssd):
         x, y = p.sx(q["tokens"]), p.sy(q["acc"])
-        marks.append(G(Circle(r=7, cx=x, cy=y, fill=C["ssd"], stroke="#fffdf8", stroke_width=2),
+        marks.append(G(Circle(r=7, cx=x, cy=y, fill=C["ssd"], stroke="#ffffff", stroke_width=2),
                        T(f"τ={q['tau']:.2f}".rstrip("0").rstrip(".") if q["tau"] else "τ=0", x=x + 11, y=y + 4, cls="ptlab"),
                        cls="pt", data_at=f"{.08 + .07 * j:.2f}", tabindex=0,
                        data_tip=f"SSD τ={q['tau']}: {q['acc']:.1f}% at {q['tokens']:.0f}k tokens"))
     off = next(q for q in pts if q["kind"] == "off")
     ox, oy, nx, ny = p.sx(off["tokens"]), p.sy(off["acc"]), p.sx(on["tokens"]), p.sy(on["acc"])
-    marks.insert(0, G(Path(d=f"M{ox},{oy - 9}l9,9l-9,9l-9,-9z", fill=C["off"], stroke="#fffdf8", stroke_width=2),
+    marks.insert(0, G(Path(d=f"M{ox},{oy - 9}l9,9l-9,9l-9,-9z", fill=C["off"], stroke="#ffffff", stroke_width=2),
                       T("off-policy", x=ox - 6, y=oy + 25, cls="ptlab", fill=C["off"]), cls="pt", data_at="0.02",
                       data_tip=f"Off-policy: {off['acc']:.1f}% at {off['tokens']:.0f}k tokens"))
-    marks.append(G(Path(d=f"M{nx},{ny - 10}l9,15h-18z", fill=C["on"], stroke="#fffdf8", stroke_width=2),
+    marks.append(G(Path(d=f"M{nx},{ny - 10}l9,15h-18z", fill=C["on"], stroke="#ffffff", stroke_width=2),
                    T("on-policy", x=nx - 12, y=ny - 16, text_anchor="middle", cls="ptlab", fill=C["on"]), cls="pt", data_at=".82",
                    data_tip=f"On-policy: {on['acc']:.1f}% at {on['tokens']:.0f}k tokens"))
     p.free += marks
@@ -148,7 +148,7 @@ def forgetting():
         ci = abs(p.sy(r["delta"] + r["ci"]) - y)
         big = r["method"] == "SSD"
         p.free.append(G(Line(x1=x, x2=x, y1=y - ci, y2=y + ci, stroke=C[r["kind"]], stroke_width=2, opacity=.5),
-                        Circle(r=9 if big else 7, cx=x, cy=y, fill=C[r["kind"]], stroke="#fffdf8", stroke_width=2),
+                        Circle(r=9 if big else 7, cx=x, cy=y, fill=C[r["kind"]], stroke="#ffffff", stroke_width=2),
                         T(r["method"], x=x + lab[r["method"]][0], y=y + lab[r["method"]][1], text_anchor=lab[r["method"]][2],
                           cls="ptlab b" if big else "ptlab"),
                         T(f"{r['tokens_m']}M tokens", x=x + lab[r["method"]][0], y=y + lab[r["method"]][1] + 15,

@@ -1,4 +1,9 @@
-"""Speculative Self-Distillation: the blog. `python site/app.py` serves on :5001; export/build_static.py freezes it."""
+"""Speculative Self-Distillation: the blog. `python site/app.py` serves on :5001; export/build_static.py freezes it.
+
+Layout follows the Distill-to-Detect project page: sticky site header, centred post heading, cover image,
+then [sticky TOC | 660px article | sidenote rail]. Citations and asides are numbered sidenotes.
+"""
+from itertools import count
 from pathlib import Path
 
 from fasthtml.common import *
@@ -9,10 +14,14 @@ from method_anim import MethodFigure
 HERE = Path(__file__).resolve().parent
 PAPER = "https://openreview.net/pdf?id=HczpgMR6S3"
 CODE = "https://anonymous.4open.science/r/Speculative-Self-Distillation/"
-AUTHORS = [("Shayan Talaei", "*", 1), ("Agam Bhatia", "*", 1), ("Arshia Soltani Moakhar", "", 1),
-           ("Jonas Hübotter", "", 2), ("Amin Saberi", "", 1), ("Azalia Mirhoseini", "", 1)]
-LOGOS = {1: ("static/logos/stanford.svg", "Stanford University"), 2: ("static/logos/eth.svg", "ETH Zürich")}
-DESC = "SSD lets the student write its own training rollouts and hands the pen to the teacher only on the few tokens where the document changes the answer."
+TITLE = "Speculative Self-Distillation"
+SUBTITLE = "Efficient knowledge internalization with per-token mixed-policy distillation"
+DESC = ("SSD lets the student write its own training rollouts and lets the teacher take over only at tokens where the "
+        "document changes the prediction, matching on-policy self-distillation with 45% fewer supervised tokens.")
+# (name, homepage or None, affiliation marks)
+AUTHORS = [("Shayan Talaei", "https://shayantalaei.com/", "*1"), ("Agam Bhatia", "https://agammsbhatia.com/", "*1"),
+           ("Arshia Soltani Moakhar", None, "1"), ("Jonas Hübotter", "https://jonhue.github.io/", "2"),
+           ("Amin Saberi", "https://stanford.edu/~saberi/", "1"), ("Azalia Mirhoseini", "https://www.azaliamirhoseini.com/", "1")]
 MEDIA = [("method loop", "method_ssd"), ("on-policy loop", "method_onpolicy"), ("inflection fork", "fork"), ("signal", "signal"),
          ("headline", "headline"), ("τ frontier", "tau_frontier"), ("curriculum", "curriculum")]
 BIBTEX = r"""@misc{talaei2026ssd,
@@ -22,177 +31,286 @@ BIBTEX = r"""@misc{talaei2026ssd,
   year   = {2026}
 }"""
 
+# key -> (title, short author list, year, url or None); taken from the paper's references.bib
+REFS = {
+    "liu2024lost": ("Lost in the Middle: How Language Models Use Long Contexts", "Liu et al.", 2024, "https://arxiv.org/abs/2307.03172"),
+    "snell2023": ("Learning by Distilling Context", "Snell, Klein and Zhong", 2023, "https://arxiv.org/abs/2209.15189"),
+    "cartridges": ("Cartridges: Lightweight and General-Purpose Long Context Representations via Self-Study", "Eyuboglu et al.", 2025,
+                   "https://arxiv.org/abs/2506.06266"),
+    "entigraph": ("Synthetic Continued Pretraining", "Yang et al.", 2025, "https://arxiv.org/abs/2409.07431"),
+    "sdft": ("Self-Distillation Enables Continual Learning", "Shenfeld, Damani, Hübotter and Agrawal", 2026, "https://arxiv.org/abs/2601.19897"),
+    "skd": ("Speculative Knowledge Distillation: Bridging the Teacher-Student Gap Through Interleaved Sampling", "Xu et al.", 2025,
+            "https://arxiv.org/abs/2410.11325"),
+    "adaswitch": ("AdaSwitch: Balancing Exploration and Guidance in Knowledge Distillation via Adaptive Switching", "Peng et al.", 2025,
+                  "https://arxiv.org/abs/2510.07842"),
+    "switch": ("SWITCH: Studying with Teacher for Knowledge Distillation of Large Language Models", "Koo et al.", 2025, None),
+    "gkd": ("On-Policy Distillation of Language Models: Learning from Self-Generated Mistakes", "Agarwal et al.", 2024,
+            "https://arxiv.org/abs/2306.13649"),
+    "dagger": ("A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning", "Ross, Gordon and Bagnell", 2011,
+               "https://arxiv.org/abs/1011.0686"),
+    "tm_opd": ("On-Policy Distillation", "Lu and Thinking Machines Lab", 2025, "https://thinkingmachines.ai/blog/on-policy-distillation/"),
+    "lin1991": ("Divergence Measures Based on the Shannon Entropy", "Lin", 1991, None),
+    "leviathan": ("Fast Inference from Transformers via Speculative Decoding", "Leviathan, Kalman and Matias", 2023,
+                  "https://arxiv.org/abs/2211.17192"),
+    "sciknoweval": ("SciKnowEval: Evaluating Multi-level Scientific Knowledge of Large Language Models", "Feng et al.", 2024,
+                    "https://arxiv.org/abs/2406.09098"),
+}
+
 hdrs = (
     Meta(name="viewport", content="width=device-width, initial-scale=1"),
     Link(rel="preconnect", href="https://fonts.googleapis.com"),
-    Link(rel="stylesheet", href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400"
+    Link(rel="stylesheet", href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400"
          "&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"),
     Link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"),
     Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js", defer=True),
     Script(src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js", defer=True),
     Link(rel="stylesheet", href="static/site.css"),
     Script(src="static/anim.js", defer=True),
-    Socials(title="Speculative Self-Distillation", site_name="SSD", description=DESC, image="static/media/method_ssd.gif", url=""),
+    Socials(title=TITLE, site_name=TITLE, description=DESC, image="static/media/thumbnail.png", url=""),
 )
 app, rt = fast_app(pico=False, hdrs=hdrs, static_path=str(HERE), live=False, default_hdrs=False)
 
-
-def Sn(*c): return Span(*c, cls="sn")          # sidenote: margin on wide screens, inline aside on narrow ones
-def Sec(sid: str, num: str, title: str, *c): return Section(Div(Span(num, cls="num"), H2(title), cls="sec-h"), *c, id=sid)
-def Cap(*c): return P(*c, cls="cap")
-
-# small inline icons for the link pills (stroke icons, 16px)
-ICONS = {
-    "paper": "M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 0v5h5M8 13h8M8 17h6",
-    "code": "M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16",
-    "cite": "M6 3h12v18l-6-4-6 4z",
-}
+ICON_PAPER = ('<svg class="link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+              'stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
+              '<polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>')
+ICON_CODE = ('<svg class="link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+             'stroke-linejoin="round" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>')
 
 
-def Pill(label: str, href: str, kind: str):
-    icon = NotStr(f'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" '
-                  f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{ICONS[kind]}"/></svg>')
-    return A(icon, label, href=href, cls=f"pill {kind}")
+class Notes:
+    """Numbered sidenotes (D2D markup: label + hidden checkbox + floated span). One instance per page render."""
+    def __init__(self): self.n = count(1)
+
+    def note(self, *c):
+        i = next(self.n)
+        return (Label(fr=f"sn-{i}", cls="margin-toggle sidenote-number"), Input(type="checkbox", id=f"sn-{i}", cls="margin-toggle"),
+                Span(*c, cls="sidenote"))
+
+    def cite(self, *keys):
+        parts = []
+        for j, k in enumerate(keys):
+            title, who, year, url = REFS[k]
+            parts += [Br() if j else "", A(title, href=url, target="_blank", rel="noopener") if url else Em(title), f" ({who}, {year})"]
+        return self.note(*parts)
 
 
-def hero():
-    names = [Span(n, Sup(f"{a}{star}"), cls="au") for n, star, a in AUTHORS]
-    logos = [Span(Sup(str(k)), Img(src=src, alt=alt, cls=f"logo logo-{k}"), cls="af") for k, (src, alt) in LOGOS.items()]
-    return Header(
-        H1("Speculative", Br(), "Self‑Distillation"),
-        Div(*names, cls="authors"),
-        Div(*logos, Span(Sup("*"), "equal contribution", cls="af eq-c"), cls="affils"),
-        Div(Pill("Paper", PAPER, "paper"), Pill("Code", CODE, "code"), Pill("BibTeX", "#cite", "cite"), cls="pills"),
-        cls="hero")
+def M(tex: str): return Div(f"$${tex}$$", cls="math-display")
+def Fig(fig, *caption, wide=True): return Figure(fig, Figcaption(*caption), cls="wide" if wide else "")
+def Off(): return Span("off-policy", cls="k-off")
+def On(): return Span("on-policy", cls="k-on")
 
 
-def intro():
+def header():
+    return Header(A(TITLE, href="#top", cls="wordmark"),
+                  Nav(A("Paper", href=PAPER, target="_blank", rel="noopener"), A("Code", href=CODE, target="_blank", rel="noopener"),
+                      A("Cite", href="#citation")), cls="site-header")
+
+
+def heading():
+    authors = []
+    for i, (name, url, sup) in enumerate(AUTHORS):
+        authors += [", " if i else "", A(name, href=url, target="_blank", rel="noopener") if url else name, Sup(sup)]
     return Div(
-        P("Deployed language models keep running into knowledge they were never trained on: a company's internal documents, "
-          "facts that changed after the training cutoff, the terminology of a specialised field. Putting that material in the prompt "
-          "works, but every query pays to process it again, context is limited, and models do not always use what is in it. For "
-          "knowledge that will be needed over and over, it makes more sense to train it into the weights."),
-        P("Self-distillation does this without labels or a larger model. The model reads the document and acts as a teacher for "
-          "itself without the document. This post is about one design choice in that recipe, who generates the training rollouts, "
-          "and how it decides what self-distillation costs. Our method, ", Strong("Speculative Self-Distillation (SSD)"),
-          ", lets the student generate and hands over to the teacher only at tokens where the document changes the prediction. "
-          "On three knowledge-acquisition tasks it matches on-policy self-distillation with 45% fewer supervised tokens on average, "
-          "and it forgets less of the model's general ability."),
-        cls="intro-text")
+        H1(TITLE, cls="post-title"), P(SUBTITLE, cls="post-subtitle"),
+        Div(P(*authors, cls="authors"),
+            P(NotStr("<sup>*</sup>Equal contribution &nbsp;·&nbsp; <sup>1</sup>Stanford University &nbsp;·&nbsp; <sup>2</sup>ETH Zürich"),
+              cls="affiliations"), cls="publish-metadata"),
+        Div(A(NotStr(ICON_PAPER), "Paper", href=PAPER, target="_blank", rel="noopener"), Span("·", cls="sep"),
+            A(NotStr(ICON_CODE), "Code", href=CODE, target="_blank", rel="noopener"), Span("·", cls="sep"),
+            A("Cite", href="#citation"), cls="resource-links"),
+        Div(Img(src="static/logos/stanford_color.png", alt="Stanford University"), Img(src="static/logos/eth.svg", alt="ETH Zürich", cls="eth"),
+            cls="logo-row"),
+        cls="post-heading", id="top")
 
 
-def body():
-    return (
-        Figure(MethodFigure(),
-               Cap(Strong("The SSD decoding loop. "), "Student and teacher are the same model; only the teacher sees the document. "
-                   "At each position both propose a next-token distribution, and if they differ by more than a threshold τ the teacher "
-                   "picks the token. The tabs show how τ → 0 and τ → ∞ recover off-policy and on-policy distillation. The rollout is "
-                   "the paper's running example; the per-step distributions and δ values are illustrative."), cls="wide"),
-
-        Sec("idea", "01", "Self-distillation and its cost",
-            P("In self-distillation the model given the document ", I("C"), " is the teacher, $\\pi_T(\\cdot\\mid x, C)$, and the same "
-              "model without it is the student, $\\pi_\\theta(\\cdot\\mid x)$. The student is trained to match the teacher token by token:",
-              Sn("The teacher is kept frozen at the initial weights, so all methods are compared against the same target.")),
-            Div("$$\\mathcal{L}(\\theta)=\\mathbb{E}_{y\\sim\\color{#b4531b}{\\pi_{\\text{gen}}}}\\Big[\\tfrac{1}{|y|}\\sum_t D\\big(\\pi_T(\\cdot\\mid x,C,y_{<t})\\,\\|\\,\\pi_\\theta(\\cdot\\mid x,y_{<t})\\big)\\Big]$$",
-                cls="eq"),
-            P("Methods differ only in the rollout policy $\\pi_{\\text{gen}}$. If the teacher writes the rollout, the method is ",
-              Span("off-policy", cls="k-off"), "; if the student writes it, it is ", Span("on-policy", cls="k-on"), ". On-policy "
-              "self-distillation (SDFT) reaches higher accuracy, because the student is trained on the kind of text it will produce at "
-              "test time. It is also slow: in our experiments it needs several times more supervised tokens than "
-              "off-policy training to converge. If internalizing a document is to be routine, for example every time a knowledge base "
-              "is updated, that cost matters.")),
-
-        Sec("why", "02", "Where on-policy training spends its tokens",
-            P("To see why on-policy training is slow, we look at the per-token loss along a rollout. It measures how much teacher and "
-              "student disagree at a position, and so how much the student can learn from that token. We call it the ", Strong("signal"), "."),
-            Figure(F.signal(), Cap(Strong("Off- vs on-policy self-distillation on the Wikipedia task. "), "Left: off-policy converges "
-                                   "about 5× faster but saturates lower. Middle: off-policy starts with a much larger per-token loss. "
-                                   "Right: per-token loss by position within a rollout."), cls="wide"),
-            P("Teacher-written rollouts carry more signal from the start. Along student-written rollouts the signal is high for the "
-              "first tokens and then drops. The student writes without the document and soon reaches states unrelated to it; "
-              "conditioned on such a prefix, the teacher's distribution falls back close to the student's and there is little left "
-              "to correct. Most on-policy supervised tokens therefore go to positions where the teacher adds little.")),
-
-        Sec("inflection", "03", "Inflection tokens",
-            P("Take the prompt “tell me about the marketing team of the company”. Student and teacher agree on “Marketing team is”, "
-              "then diverge: the teacher, which has read the memo, continues with “led by Lina Okafor”, while the student continues "
-              "with a generic “mainly focused on creating the …”. We call such a position an ", Strong("inflection token"),
-              ": a position $t$ where $\\delta_t = D_{\\text{switch}}(\\pi_\\theta \\,\\|\\, \\pi_T) > \\tau$."),
-            Figure(F.fork(), Cap("After an inflection position, SSD lets the teacher continue. On-policy keeps the student's token, "
-                                 "and the tokens after it are ", Em("transient states"), "."), cls="wide"),
-            P("The tokens after an on-policy inflection are transient: the update at the inflection moves the student away from "
-              "“mainly”, so it will rarely reach those states again, and supervision spent on them is largely wasted. On-policy "
-              "training learns such branch points one at a time over many updates; off-policy training sees all of them at once, but "
-              "only on text the student would not write.")),
-
-        Sec("method", "04", "Speculative Self-Distillation",
-            P("SSD keeps the rollout on the student where the two models agree and switches to the teacher where they do not. The "
-              "student generates by default; at each position we compare the two next-token distributions, and if they differ by "
-              "more than τ the teacher generates that token. As in speculative decoding, one model drafts and the other checks, but "
-              "here a rejected token is written by the teacher and the result is used for training. Every position is supervised "
-              "with the same loss as before."),
-            Pre(Code(Span("for", cls="kw"), " t = 1, 2, … until EOS:\n"
-                     "    p_S, p_T = student(x, y<t), teacher(x, C, y<t)\n",
-                     Span("    if D_switch(p_S ‖ p_T) > τ:", cls="hl"), "   ", Span("# inflection token", cls="cm"), "\n"
-                     "        y_t ~ p_T                  ", Span("# teacher writes", cls="cm t"), "\n"
-                     "    else:\n"
-                     "        y_t ~ p_S                  ", Span("# student writes", cls="cm s"), "\n"
-                     "    loss += D_loss(p_T ‖ p_S)      ", Span("# supervise every position", cls="cm"), "\n"), cls="algo"),
-            P("τ is the only new hyperparameter. τ → 0 recovers off-policy distillation and τ → ∞ recovers on-policy distillation.",
-              Sn("With JSD as $D_{\\text{switch}}$ the divergence is bounded by $\\ln 2\\approx 0.69$, so any larger τ is exactly "
-                 "on-policy."))),
-
-        Sec("results", "05", "Results",
-            P("We follow the SDFT evaluation protocol with Qwen3-4B-Instruct as both student and teacher, on three closed-book QA "
-              "tasks: ", Strong("Company Memo"), " (a synthetic internal document), ", Strong("Wikipedia"), " (an article published "
-              "after the model's training cutoff) and ", Strong("Science Q&A"), " (SciKnowEval chemistry). Cost is measured in "
-              "supervised tokens, the number of positions the loss is computed on, which is roughly proportional to compute."),
-            Figure(F.headline(), Cap("Test accuracy against supervised tokens. The slider compares methods at the same budget. Faint "
-                                     "dots are raw evaluations; lines are smoothed."), cls="wide"),
-            P("On all three tasks SSD improves almost as fast as off-policy early on and then continues to on-policy accuracy, using ",
-              Strong("44%"), ", ", Strong("34%"), " and ", Strong("57%"), " fewer supervised tokens than on-policy. On Science Q&A "
-              "it finishes about 3 points above on-policy and 15 above off-policy.")),
-
-        Sec("knob", "06", "Choosing τ",
-            Div(Div(P("Sweeping τ traces the trade-off between the two endpoints. Small τ is cheap but limits accuracy, as in "
-                      "off-policy training; large τ approaches on-policy accuracy and cost. Intermediate values reach higher accuracy "
-                      "than off-policy while converging faster than on-policy. With JSD as the switch, τ between 0.2 and 0.5 works well."),
-                    P("The teacher's share also changes during training. Early on the two models disagree often, and at the lowest "
-                      "threshold up to 40% of tokens come from the teacher. As the student learns the document the switch fires less, "
-                      "so training moves toward on-policy without a schedule (figure below)."), cls="side-t"),
-                Figure(F.tau_frontier(), Cap("Final accuracy vs supervised tokens across τ, Company Memo. The curve is a guide to "
-                                             "the eye."), cls="side-f"), cls="side"),
-            Figure(F.curriculum(), Cap("SSD on Company Memo for several JSD thresholds. Left: fraction of rollout tokens written by "
-                                       "the teacher. Right: mean response length."), cls="wide")),
-
-        Sec("forgetting", "07", "Forgetting",
-            Div(Figure(F.forgetting(), Cap("In-domain SciQA accuracy against the mean change on six general benchmarks (Qwen2.5-7B). "
-                                           "Error bars: 95% CI."), cls="side-f"),
-                Div(P("Training on new knowledge can degrade other skills. Following SDFT, we fine-tune Qwen2.5-7B on SciKnowEval "
-                      "chemistry and measure the average change on six general benchmarks. (Qwen3-4B showed little forgetting under "
-                      "any method.)"),
-                    P("Off-policy methods lose about 6.6 points and on-policy SDFT loses 4.5. SSD loses 1.4, with the best SciQA "
-                      "accuracy (71.6) and 22% fewer supervised tokens than SDFT."), cls="side-t"),
-                cls="side rev")),
-
-        Sec("routing", "08", "Switching at inference time",
-            P("The same switch can be used for decoding without any training. The teacher sees the question with its answer, the "
-              "student sees only the question, and the JSD between them decides who emits each token."),
-            Figure(F.routing(), Cap("JSD-routed decoding on 507 SciKnowEval chemistry questions, Qwen3-4B-Instruct, no weight "
-                                    "updates. Right: share of tokens from the teacher."), cls="narrow"),
-            P("With 15.7% of tokens from the teacher, accuracy is 74.0%, compared with 80.3% for the teacher alone and 13.8% for the "
-              "student. Much of the teacher's advantage comes from a small number of tokens, which is what SSD relies on.")),
-
-        Section(Div(Span("", cls="num"), H2("Cite"), cls="sec-h"),
-                Div(Button("copy", cls="copy", type="button"), Pre(Code(BIBTEX), cls="bib"), cls="bibwrap"), id="cite"),
-    )
+TOC = [("setup", "Self-distillation and who writes the rollout"), ("why", "Where on-policy training spends its tokens"),
+       ("inflection", "Inflection tokens"), ("method", "Speculative Self-Distillation"), ("results", "Results"),
+       ("knob", "Choosing τ"), ("curriculum", "The teacher's share decreases"), ("forgetting", "Forgetting"),
+       ("routing", "Switching at inference time"), ("citation", "Citation")]
 
 
-def nav():
-    items = [("idea", "Idea"), ("why", "Why"), ("inflection", "Inflection"), ("method", "Method"), ("results", "Results"),
-             ("knob", "τ"), ("forgetting", "Forgetting"), ("routing", "Inference"), ("cite", "Cite")]
-    return Nav(A("SSD", href="#top", cls="brand"), Div(*[A(t, href=f"#{i}", data_sec=i) for i, t in items], cls="nav-l"),
-               Div(cls="progress"), cls="topnav")
+def article(n: Notes):
+    return Article(
+        P("Language models are routinely asked about things they never saw during pretraining: the internal documents of a "
+          "company, events that happened after the training cutoff, or the vocabulary of a specialised field. The standard "
+          "answer is to put the relevant text in the prompt. This works, but the document has to be processed again on every "
+          "query, it competes for limited context, and models do not always make good use of evidence that is in their "
+          "context.", *n.cite("liu2024lost"), " When the same knowledge is needed repeatedly, it is more economical to train it "
+          "into the weights once."),
+        P("Self-distillation is a simple way to do this. The model is given the document and acts as a teacher; the same model "
+          "without the document is the student, and it is trained to reproduce the teacher's next-token distributions.",
+          *n.cite("snell2023"), " Existing methods differ mainly in who generates the text the student is trained on. Off-policy "
+          "methods train on text written by the teacher,", *n.cite("cartridges", "entigraph"), " while on-policy methods such as "
+          "SDFT let the student write and use the teacher only to score each token.", *n.cite("sdft"), " In standard "
+          "teacher–student distillation, Speculative Knowledge Distillation (SKD) mixes the two inside a single sequence, letting "
+          "the teacher replace student tokens that it considers unlikely.", *n.cite("skd"), " We bring this per-token view to "
+          "self-distillation. In ", Strong("Speculative Self-Distillation (SSD)"), " the student writes by default and the "
+          "teacher takes over only at tokens where the document changes the prediction. On three knowledge-acquisition tasks, "
+          "SSD reaches the accuracy of on-policy self-distillation with 45% fewer supervised tokens on average, and it forgets "
+          "less of the model's general ability."),
+        Fig(MethodFigure(),
+            B("The SSD decoding loop. "), "The student and the teacher are the same model, and only the teacher sees the document ",
+            I("C"), ". At each position both produce a next-token distribution (panels above and below the token being decided). "
+            "The bars at the bottom show their divergence δ", Sub("t"), "; when it exceeds the threshold τ (dashed line), the teacher "
+            "writes the token (orange), otherwise the student does (blue). The tabs replay the same prompt under off-policy (τ → 0), "
+            "SSD and on-policy (τ → ∞) generation. Tokens follow the paper's running example; the distributions and δ values are "
+            "illustrative."),
+
+        H2("Self-distillation and who writes the rollout", id="setup"),
+        P("Let $x$ be a prompt and $C$ the privileged context, for example a document. The teacher $\\pi_T(\\cdot\\mid x, C)$ is the "
+          "base model with $C$ in its context, and the student $\\pi_\\theta(\\cdot\\mid x)$ is the same model without it. The goal "
+          "is to update $\\theta$ so that the student behaves like the teacher on new prompts, without being given $C$. All the "
+          "methods we compare minimise the same token-level objective:",
+          *n.note("Throughout, the teacher is kept frozen at the initial weights, so every method is trained toward the same target.")),
+        M("\\mathcal{L}(\\theta)=\\mathbb{E}_{y\\sim\\pi_{\\text{gen}}}\\Big[\\tfrac{1}{|y|}\\sum_t D\\big(\\pi_T(\\cdot\\mid x,C,y_{<t})"
+          "\\,\\|\\,\\pi_\\theta(\\cdot\\mid x,y_{<t})\\big)\\Big]"),
+        P("where $D$ is a divergence between the two next-token distributions, such as forward KL, reverse KL or the Jensen–Shannon "
+          "divergence (JSD).", *n.cite("lin1991"), " What distinguishes the methods is the rollout policy $\\pi_{\\text{gen}}$: the "
+          "model that writes the sequence $y$ on which the loss is computed."),
+        P("Setting $\\pi_{\\text{gen}} = \\pi_T$ gives ", Off(), " self-distillation: the teacher writes the response and the student "
+          "imitates it. Every position lies on a well-informed trajectory, but at test time the student has to continue from its "
+          "own prefixes, which it never practised on, a form of exposure bias familiar from imitation learning.", *n.cite("dagger"),
+          " Setting $\\pi_{\\text{gen}} = \\pi_\\theta$ gives ", On(), " self-distillation: the student writes the response and the "
+          "teacher scores every token of it.", *n.cite("gkd", "sdft"), " Training and test-time behaviour then match, and on-policy "
+          "training reaches higher accuracy, but it is considerably slower.", *n.cite("tm_opd")),
+
+        H2("Where on-policy training spends its tokens", id="why"),
+        P("To understand where the cost comes from, we look at the per-token loss along a rollout. It measures how much the teacher "
+          "and the student disagree at a position, and therefore how large an update that token produces. We refer to it as the ",
+          Strong("signal"), ". Figure 2 compares off- and on-policy training on the Wikipedia task."),
+        Fig(F.signal(), B("On-policy rollouts lose their training signal after a few tokens. "), "Off- and on-policy self-distillation "
+            "on the Wikipedia task. Left: test accuracy against supervised tokens; off-policy converges about five times faster but "
+            "plateaus lower. Middle: average per-token loss during training; off-policy rollouts start with more than twice the "
+            "signal and use it up quickly. Right: per-token loss by position within a rollout; along on-policy rollouts it drops "
+            "from around 2 to below 1 within the first 15 tokens, while off-policy rollouts stay high."),
+        P("Three things are visible. Off-policy training converges about five times faster, consistent with prior work, but "
+          "on-policy training reaches a higher final accuracy. Off-policy rollouts start with more than twice the per-token signal "
+          "and reduce it quickly. And along on-policy rollouts, the signal is concentrated in the first few tokens. The student "
+          "writes without the document, so it soon reaches states that have little to do with it; conditioned on such a prefix, "
+          "the teacher's distribution falls back to one close to the student's, and there is little left to correct."),
+        P("Most of the supervised tokens in on-policy training are therefore spent on positions where the teacher adds little "
+          "information."),
+
+        H2("Inflection tokens", id="inflection"),
+        P("Figure 3 shows a concrete case. Asked about the marketing team of the company described in the memo, the student and the "
+          "teacher agree on the opening words “Marketing team is”. At the fourth token they diverge: the teacher, which has read "
+          "the memo, continues with “led by Lina Okafor”, while the student writes the generic “mainly focused on creating the …”. "
+          "We call such a position an ", Strong("inflection position"), ". Given a rollout and a threshold τ, position $t$ is a "
+          "τ-inflection position if"),
+        M("\\delta_t = D_{\\text{switch}}\\big(\\pi_\\theta(\\cdot\\mid x,y_{<t}) \\,\\|\\, \\pi_T(\\cdot\\mid x,C,y_{<t})\\big) > \\tau,"),
+        P("where $D_{\\text{switch}}$ is any divergence between the two next-token distributions."),
+        Fig(F.fork(), B("Two continuations of the same prefix. "), "Student and teacher agree up to “Marketing team is”, and the next "
+            "token is an inflection position (δ", Sub("t"), " > τ). SSD lets the teacher write it, and the rollout goes on to name the "
+            "team lead and the team size. On-policy keeps the student's “mainly”; the grey tokens after it are transient states, "
+            "which the student will rarely visit once the update has corrected the inflection."),
+        P("At an inflection position the loss pushes the student strongly away from its original prediction, so after the update "
+          "it is unlikely to write “mainly” in this context again. The states that follow in the on-policy rollout were generated by "
+          "a policy that the update is changing, and the student will rarely visit them again. We call them ",
+          Strong("transient states"), ", and supervision on them is of limited use. On-policy training learns about each inflection "
+          "position separately, over many updates, whereas an off-policy rollout contains the team lead, the team size and the "
+          "remaining details in a single pass, but on text the student would not have written."),
+
+        H2("Speculative Self-Distillation", id="method"),
+        P("SSD keeps the rollout on the student wherever the student already agrees with the teacher, and switches to the teacher "
+          "where it does not. The student generates by default. At every position both models produce their next-token "
+          "distributions; if their divergence exceeds τ, the position is an inflection position and the teacher samples the token. "
+          "Otherwise the student does. Every position is trained with the same loss as before, so the only change is in how the "
+          "rollout is generated."),
+        Pre(Code(Span("for", cls="kw"), " t = 1, 2, … until EOS:\n"
+                 "    p_S, p_T = student(x, y<t), teacher(x, C, y<t)\n",
+                 Span("    if D_switch(p_S ‖ p_T) > τ:", cls="hl"), "   ", Span("# inflection position", cls="cm"), "\n"
+                 "        y_t ~ p_T                  ", Span("# teacher writes", cls="cm t"), "\n"
+                 "    else:\n"
+                 "        y_t ~ p_S                  ", Span("# student writes", cls="cm s"), "\n"
+                 "    loss += D_loss(p_T ‖ p_S)      ", Span("# every position is supervised", cls="cm"), "\n"), cls="algo"),
+        P("The name comes from speculative decoding, in which a small draft model proposes tokens and a larger model verifies "
+          "them.", *n.cite("leviathan"), " Several distillation methods already switch between student and teacher inside a "
+          "sequence: SKD resamples low-confidence student tokens from the teacher's top-K distribution,", *n.cite("skd"),
+          " AdaSwitch hands over to the teacher once a sliding-window KL divergence exceeds a threshold,", *n.cite("adaswitch"),
+          " and SWITCH uses a per-position divergence criterion.", *n.cite("switch"), " These methods distill a separate teacher "
+          "into a student. In self-distillation the two models share their weights and differ only in the privileged context, so "
+          "the divergence between them indicates directly where the context changes the prediction."),
+        P("The threshold τ is the only new hyperparameter. Setting τ → 0 lets the teacher write every token and recovers off-policy "
+          "distillation; τ → ∞ never hands over and recovers on-policy distillation.",
+          *n.note("With JSD as $D_{\\text{switch}}$ the divergence is bounded by $\\ln 2 \\approx 0.69$, so any larger τ is exactly "
+                  "on-policy."),
+          " The divergence used for routing need not be the one used for training: $D_{\\text{switch}}$ decides who writes a token, "
+          "and $D_{\\text{loss}}$ trains the student."),
+
+        H2("Results", id="results"),
+        P("We follow the evaluation protocol of SDFT", *n.cite("sdft"), " and use Qwen3-4B-Instruct as both student and teacher. The "
+          "three tasks cover different reasons to internalize knowledge. ", Strong("Company Memo"), " is a synthetic internal "
+          "document about a fictional cooperative, standing in for private organisational knowledge. ", Strong("Wikipedia"),
+          " uses an article on Cyclone Ditwah, which postdates the model's training data and on which the base model scores below "
+          "20%. ", Strong("Science Q&A"), " is the Chemistry L-3 subset of SciKnowEval,", *n.cite("sciknoweval"), " which requires "
+          "reasoning with domain knowledge rather than recalling a fact. We compare against the off-policy baselines SFT and FKL "
+          "and the on-policy baseline SDFT."),
+        P("We measure cost in ", Em("supervised tokens"), ", the number of response positions on which the loss is computed. This is "
+          "roughly proportional to compute, and it is a fairer comparison than optimizer steps: on-policy rollouts are longer than "
+          "off-policy ones, so each on-policy step costs more."),
+        Fig(F.headline(), B("SSD reaches on-policy accuracy with 34–57% fewer supervised tokens. "), "Test accuracy against cumulative "
+            "supervised tokens on Company Memo, Wikipedia and Science Q&A for the best off-policy baseline (SFT or FKL), on-policy "
+            "SDFT and SSD. Arrows mark the savings at the on-policy plateau. The slider compares the methods at the same budget, as a "
+            "fraction of the on-policy run; dots are individual evaluations and lines are smoothed."),
+        P("On all three tasks the baselines show the same trade-off. Off-policy training improves quickly but levels off below the "
+          "best accuracy; on-policy training reaches a higher plateau only after much more supervision. SSD follows the steep early "
+          "part of the off-policy curve and then keeps improving to the on-policy plateau, which it reaches with 44%, 34% and 57% "
+          "fewer supervised tokens. On Science Q&A it finishes about 3 points above on-policy and 15 points above off-policy."),
+
+        H2("Choosing τ", id="knob"),
+        P("Figure 5 sweeps the threshold on Company Memo. At small τ the teacher intervenes often: few tokens are supervised and "
+          "final accuracy is close to off-policy. As τ grows, more of each rollout is written by the student, and accuracy rises "
+          "toward the on-policy level along with the cost. Intermediate thresholds reach higher accuracy than off-policy while "
+          "converging faster than on-policy, so SSD traces a Pareto frontier between the two. With JSD as the switching divergence, "
+          "τ between 0.2 and 0.5 is a good default."),
+        Fig(F.tau_frontier(), B("The threshold τ traces a Pareto frontier. "), "Final test accuracy against supervised tokens for SSD "
+            "with JSD thresholds from 0 to 0.75, with the off- and on-policy baselines (Company Memo, Qwen3-4B-Instruct). Small τ "
+            "sits next to off-policy and large τ next to on-policy; τ between 0.2 and 0.5 (shaded) reaches most of the on-policy "
+            "accuracy at close to off-policy cost. The curve is a guide to the eye; hover over a point for its values.", wide=False),
+
+        H2("The teacher's share decreases during training", id="curriculum"),
+        P("A good switching rule should not require a hand-designed schedule for how much the teacher participates. Figure 6 shows "
+          "that SSD adjusts on its own. Early in training the student and the teacher disagree at many positions, and the teacher "
+          "writes a large share of each rollout, up to 40% of tokens at the lowest threshold. As the student learns the document, "
+          "the switch fires less often and teacher involvement decays for every threshold."),
+        Fig(F.curriculum(), B("Teacher involvement decays without a schedule. "), "SSD on Company Memo with four JSD thresholds. Left: "
+            "fraction of rollout tokens written by the teacher at each training step. Right: mean response length. Lower thresholds "
+            "use the teacher more at the start, and all runs move toward student-written rollouts and similar response lengths."),
+        P("Response length changes in the same way. With a high threshold the student keeps control for longer before enough "
+          "divergence builds up to trigger the teacher, so early rollouts are long and variable. As training proceeds, lengths "
+          "settle and converge across thresholds. The teacher is used heavily while the student lacks the knowledge, and its share "
+          "falls as the student learns, until training is close to on-policy."),
+
+        H2("Forgetting", id="forgetting"),
+        P("Learning new knowledge can erode existing capabilities. SDFT showed that on-policy self-distillation forgets less than "
+          "supervised fine-tuning,", *n.cite("sdft"), " and because SSD keeps rollouts close to the student's distribution we "
+          "expected it to share this property. With Qwen3-4B we saw little forgetting under any method, likely because the model "
+          "was already post-trained on data resembling the evaluation suite. We therefore follow the SDFT protocol and fine-tune "
+          "Qwen2.5-7B on SciKnowEval chemistry, measuring in-domain accuracy against the average change on six general benchmarks."),
+        Fig(F.forgetting(), B("SSD learns the new domain with the least forgetting. "), "In-domain accuracy on SciKnowEval chemistry "
+            "against the average change on six general benchmarks (HellaSwag, HumanEval, IFEval, MMLU, TruthfulQA, Winogrande) after "
+            "fine-tuning Qwen2.5-7B. Labels give supervised tokens; error bars are 95% confidence intervals. Up and to the right is "
+            "better.", wide=False),
+        P("The off-policy methods SFT and FKL learn the new skill but lose about 6.6 points on the general benchmarks. On-policy "
+          "SDFT loses 4.5 at comparable in-domain accuracy. SSD has both the highest in-domain accuracy (71.6, against 68.4 for "
+          "SDFT) and the smallest loss (−1.4), while using 22% fewer supervised tokens than SDFT."),
+
+        H2("Switching at inference time", id="routing"),
+        P("The switching rule can also be applied at inference, without any training, which shows how much of the teacher's "
+          "advantage is carried by a few tokens. On 507 SciKnowEval chemistry questions we decode with two forward passes of "
+          "Qwen3-4B-Instruct per step: the student sees only the question, the teacher also sees the reference answer, and the JSD "
+          "between their next-token distributions decides which of them emits the token."),
+        Fig(F.routing(), B("A few teacher tokens recover most of the teacher's accuracy. "), "JSD-routed decoding on 507 SciKnowEval "
+            "chemistry questions with Qwen3-4B-Instruct, without training. Bars show accuracy for the student alone, four "
+            "thresholds, and the teacher alone; the right column gives the share of tokens emitted by the teacher.", wide=False),
+        P("The student alone answers 13.8% of the questions correctly and the teacher 80.3%. Routing 15.7% of tokens to the teacher "
+          "(τ = 0.1) raises accuracy to 74.0%, and even at τ = 0.5, with 2.7% teacher tokens, accuracy is 51.9%. Responses also "
+          "become shorter as the teacher intervenes more. Much of the teacher's advantage is concentrated in a small number of "
+          "positions, which is the property SSD relies on during training."),
+
+        H2("Citation", id="citation"),
+        Div(Button("copy", cls="copy", type="button"), Pre(BIBTEX, cls="citation-block bib"), cls="bibwrap"),
+        cls="content")
 
 
 CAPTURE = {"method": MethodFigure, "fork": F.fork, "signal": F.signal, "headline": F.headline,
@@ -203,10 +321,13 @@ CAPTURE = {"method": MethodFigure, "fork": F.fork, "signal": F.signal, "headline
 def index(capture: str = ""):
     if capture in CAPTURE:
         return Title(f"SSD · {capture}"), Main(CAPTURE[capture](), cls=f"capture-main cap-{capture}", data_capture=capture)
-    return (Title("Speculative Self-Distillation"), Meta(name="description", content=DESC),
-            nav(), Main(hero(), intro(), *body(), cls="page", id="top"),
-            Footer(Div(*[Img(src=s, alt=a, cls="logo") for s, a in LOGOS.values()], cls="foot-logos"),
-                   P("Speculative Self-Distillation · Stanford University & ETH Zürich · 2026"), cls="foot"))
+    return (Title(TITLE), Meta(name="description", content=DESC),
+            header(), heading(),
+            Div(Img(src="static/media/thumbnail.png", alt="Speculative Self-Distillation: a student and a teacher robot writing a "
+                    "shared token sequence, with the teacher's tokens where the divergence crosses the threshold"), cls="post-cover"),
+            Div(Nav(Ul(*[Li(A(t, href=f"#{i}", data_sec=i)) for i, t in TOC]), cls="left-toc", aria_label="Table of contents"),
+                article(Notes()), cls="post-shell"),
+            Footer(P("Speculative Self-Distillation · Stanford University and ETH Zürich · 2026"), cls="site-footer"))
 
 
 serve(port=5001, reload=False)

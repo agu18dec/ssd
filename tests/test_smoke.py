@@ -13,7 +13,7 @@ client = TestClient(app.app)
 
 def test_index_renders_every_section_and_figure():
     html = client.get("/").text
-    for sec in ["idea", "why", "inflection", "method", "results", "knob", "forgetting", "routing", "cite"]:
+    for sec in ["setup", "why", "inflection", "method", "results", "knob", "curriculum", "forgetting", "routing", "citation"]:
         assert f'id="{sec}"' in html
     for fig in app.CAPTURE:
         assert f'data-fig="{fig}"' in html
@@ -41,7 +41,7 @@ def test_data_matches_paper_numbers():
 
 
 def test_static_assets_exist():
-    for f in ["static/site.css", "static/anim.js", "static/logos/stanford.svg", "static/logos/eth.svg"]:
+    for f in ["static/site.css", "static/anim.js", "static/logos/stanford_color.png", "static/logos/eth.svg", "static/media/thumbnail.png"]:
         assert (ROOT / "site" / f).exists()
     for _, m in app.MEDIA:
         assert (ROOT / "site/static/media" / f"{m}.gif").exists()

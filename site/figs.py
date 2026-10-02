@@ -80,7 +80,7 @@ class Panel:
         enc = ";".join(f"{a:.1f},{b:.1f}" for a, b in p)
         self.clipped.append(Path(d=path_d(p), fill="none", stroke=color, stroke_width=width, stroke_linejoin="round",
                                  stroke_linecap="round", stroke_dasharray=dash or None, cls="s", data_s=key, data_pts=enc))
-        if head: self.free.append(Circle(r=4.5, cx=p[0][0], cy=p[0][1], fill=color, stroke="#fffdf8", stroke_width=2,
+        if head: self.free.append(Circle(r=4.5, cx=p[0][0], cy=p[0][1], fill=color, stroke="#ffffff", stroke_width=2,
                                          cls="head", data_s=key))
 
     def raw(self, pts, color: str, r=1.8, opacity=.28):
