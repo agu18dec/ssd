@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FIG = ROOT / "poster/figures"
 C = {"off": "#ff751f", "ssd": "#3ccb81", "on": "#0cc0df"}    # the paper's plot colors
 CARDINAL = "#8c1515"
-LINKS = {"paper": "https://openreview.net/pdf?id=HczpgMR6S3", "blog": "https://agu18dec.github.io/ssd/"}
+LINKS = {"paper": "https://openreview.net/pdf?id=HczpgMR6S3"}
 
 
 def forgetting():
@@ -44,7 +44,7 @@ def forgetting():
 def logos(pw):
     """SVG wordmarks -> vector PDFs sized to the artwork (XeLaTeX can't include SVG directly)."""
     b = pw.chromium.launch()
-    for name in ("stanford", "eth"):
+    for name, white in [("stanford", False), ("eth", False), ("stanford", True), ("eth", True)]:
         svg = (ROOT / f"site/static/logos/{name}.svg").read_text()
         svg = svg[svg.index("<svg"):]
         if "viewBox" not in svg:   # ETH ships width/height only; give it a viewBox so it scales
@@ -53,20 +53,21 @@ def logos(pw):
         svg = re.sub(r'\s(width|height)="[^"]*"', "", svg[:svg.index(">")], count=2) + svg[svg.index(">"):]
         pg = b.new_page()
         pg.set_content(f"<html><body style='margin:0'><div id=l style='display:inline-block;height:200px'>{svg}</div></body></html>")
-        pg.add_style_tag(content="#l svg{height:200px;width:auto;display:block}")
+        pg.add_style_tag(content="#l svg{height:200px;width:auto;display:block}" + ("#l svg *{fill:#fff !important}" if white else ""))
         box = pg.locator("#l svg").bounding_box()
-        pg.pdf(path=str(FIG / f"logo_{name}.pdf"), width=f"{box['width']:.0f}px", height=f"{box['height']:.0f}px",
+        pg.pdf(path=str(FIG / f"logo_{name}{'_white' if white else ''}.pdf"), width=f"{box['width']:.0f}px", height=f"{box['height']:.0f}px",
                print_background=False, page_ranges="1")
     b.close()
 
 
 def qr():
-    """QR codes as plain vector paths (segno's own PDF output trips up xdvipdfmx)."""
+    """QR codes as plain vector paths (segno's own PDF output trips up xdvipdfmx), on a white tile with a quiet zone."""
     from matplotlib.patches import Rectangle
     for name, url in LINKS.items():
         m = [list(r) for r in segno.make(url, error="m").matrix]
-        n = len(m)
-        fig = plt.figure(figsize=(4, 4)); ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, n); ax.set_ylim(n, 0); ax.axis("off")
+        n, q = len(m), 2     # q = quiet-zone modules
+        fig = plt.figure(figsize=(4, 4), facecolor="white"); ax = fig.add_axes([0, 0, 1, 1]); ax.axis("off")
+        ax.set_xlim(-q, n + q); ax.set_ylim(n + q, -q)
         for y, row in enumerate(m):
             for x, v in enumerate(row):
                 if v: ax.add_patch(Rectangle((x, y), 1.02, 1.02, color=CARDINAL, lw=0))
