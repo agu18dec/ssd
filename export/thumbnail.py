@@ -1,4 +1,4 @@
-"""Render the blog cover / social thumbnail (1600x900 PNG) from a hand-built SVG scene.
+"""Render the blog cover / social thumbnail (1600x900 PNG): an explanatory diagram of one SSD rollout.
 
 usage: uv run python export/thumbnail.py   ->  site/static/media/thumbnail.png
 """
@@ -8,92 +8,112 @@ from playwright.sync_api import sync_playwright
 
 OUT = Path(__file__).resolve().parent.parent / "site/static/media/thumbnail.png"
 W, H = 1600, 900
-INK, PAPER = "#1f2a44", "#f3ead8"
-T, T_FILL, S, S_FILL, X_FILL = "#e8702a", "#ffd9bd", "#1b97c4", "#cbe9f6", "#e6e2da"
+INK, MUTED, BG = "#1f2a44", "#5b6276", "#fbf8f2"
+T, T_FILL, T_INK = "#e8702a", "#ffe0c8", "#8a3a0e"
+S, S_FILL, S_INK = "#1b97c4", "#d3eefa", "#0c5470"
 RED = "#c2372f"
 
 TOKENS = [("Marketing", "s"), ("team", "s"), ("is", "s"), ("led", "t"), ("by", "s"), ("Lina", "t"), ("Okafor", "t"),
           ("with", "s"), ("12", "t"), ("people", "s")]
 DELTA = [.10, .05, .07, .58, .04, .66, .62, .06, .52, .05]
+TAU = .30
 
 
 def robot(x, y, body, face, teacher=False):
-    """A simple geometric robot head at (x, y): rounded head, visor, two eyes, antenna (teacher gets a mortarboard)."""
-    hat = (f'<polygon points="{x-70},{y-78} {x},{y-108} {x+70},{y-78} {x},{y-48}" fill="{INK}"/>'
-           f'<rect x="{x-34}" y="{y-80}" width="68" height="26" fill="{INK}"/>'
-           f'<path d="M{x+52},{y-82} v42" stroke="{T}" stroke-width="6"/><circle cx="{x+52}" cy="{y-36}" r="9" fill="{T}"/>') if teacher else \
-          (f'<path d="M{x},{y-62} v-26" stroke="{INK}" stroke-width="7"/><circle cx="{x}" cy="{y-94}" r="11" fill="{S}" stroke="{INK}" stroke-width="5"/>')
-    return f'''
-    <g>
-      <rect x="{x-78}" y="{y-58}" width="156" height="128" rx="30" fill="{body}" stroke="{INK}" stroke-width="7"/>
-      <rect x="{x-56}" y="{y-30}" width="112" height="62" rx="18" fill="{face}" stroke="{INK}" stroke-width="5"/>
-      <circle cx="{x-24}" cy="{y+1}" r="11" fill="{INK}"/><circle cx="{x+24}" cy="{y+1}" r="11" fill="{INK}"/>
-      <circle cx="{x-20}" cy="{y-3}" r="4" fill="#fff"/><circle cx="{x+28}" cy="{y-3}" r="4" fill="#fff"/>
-      <rect x="{x-92}" y="{y-12}" width="14" height="40" rx="6" fill="{INK}"/><rect x="{x+78}" y="{y-12}" width="14" height="40" rx="6" fill="{INK}"/>
-      {hat}
-    </g>'''
+    hat = (f'<polygon points="{x-56},{y-62} {x},{y-86} {x+56},{y-62} {x},{y-38}" fill="{INK}"/>'
+           f'<rect x="{x-27}" y="{y-64}" width="54" height="20" fill="{INK}"/>'
+           f'<path d="M{x+42},{y-66} v34" stroke="{T}" stroke-width="5"/><circle cx="{x+42}" cy="{y-28}" r="7" fill="{T}"/>') if teacher else \
+          (f'<path d="M{x},{y-48} v-20" stroke="{INK}" stroke-width="6"/><circle cx="{x}" cy="{y-73}" r="9" fill="{S}" stroke="{INK}" stroke-width="4"/>')
+    return f'''<g>
+      <rect x="{x-62}" y="{y-46}" width="124" height="102" rx="24" fill="{body}" stroke="{INK}" stroke-width="6"/>
+      <rect x="{x-44}" y="{y-24}" width="88" height="50" rx="14" fill="{face}" stroke="{INK}" stroke-width="4"/>
+      <circle cx="{x-19}" cy="{y+1}" r="9" fill="{INK}"/><circle cx="{x+19}" cy="{y+1}" r="9" fill="{INK}"/>
+      <rect x="{x-74}" y="{y-10}" width="12" height="32" rx="5" fill="{INK}"/><rect x="{x+62}" y="{y-10}" width="12" height="32" rx="5" fill="{INK}"/>
+      {hat}</g>'''
 
 
 def scene() -> str:
-    # token tape
-    x, ty, toks, bars = 300, 520, [], []
-    for (tok, src), d in zip(TOKENS, DELTA):
-        w = 17.4 * len(tok) + 30
-        fill, stroke = (T_FILL, T) if src == "t" else (S_FILL, S)
-        toks.append(f'<rect x="{x+6}" y="{ty+6}" width="{w}" height="60" rx="13" fill="{INK}"/>'
-                    f'<rect x="{x}" y="{ty}" width="{w}" height="60" rx="13" fill="{fill}" stroke="{INK}" stroke-width="5"/>'
-                    f'<text x="{x+w/2}" y="{ty+40}" text-anchor="middle" class="tok">{tok}</text>')
-        bh = d * 190
-        bars.append(f'<rect x="{x+10}" y="{790-bh}" width="{w-20}" height="{bh}" rx="6" fill="{T if src == "t" else S}" '
-                    f'stroke="{INK}" stroke-width="4"/>')
-        x += w + 12
-    tau_y = 790 - .3 * 190
-    deco = "".join(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{c}" opacity=".55"/>' for cx, cy, r, c in
-                   [(1380, 170, 150, "#e9c46a"), (1500, 330, 90, "#9ec5b0"), (180, 760, 120, "#9ec5b0"), (1450, 720, 70, "#f2a679")])
-    rays = "".join(f'<line x1="1380" y1="170" x2="{1380+260*__import__("math").cos(a/12*6.283)}" '
-                   f'y2="{170+260*__import__("math").sin(a/12*6.283)}" stroke="#e9c46a" stroke-width="10" opacity=".35"/>' for a in range(12))
-    doc = (f'<g transform="translate(262,352) rotate(-8) scale(.82)"><rect x="8" y="8" width="96" height="122" rx="8" fill="{INK}"/>'
-           f'<rect width="96" height="122" rx="8" fill="#fffaf0" stroke="{INK}" stroke-width="5"/>'
-           + "".join(f'<rect x="16" y="{22+i*18}" width="{64 - (i % 2) * 18}" height="7" rx="3" fill="{T}" opacity=".7"/>' for i in range(5))
-           + f'<text x="48" y="160" text-anchor="middle" class="ctx">C</text></g>')
+    # layout
+    x0, ty, th, gap = 470, 470, 60, 10
+    slots, x = [], x0
+    for tok, src in TOKENS:
+        w = 15.6 * len(tok) + 26
+        slots.append((x, w, tok, src)); x += w + gap
+    x_end = x - gap
+    base, bar_h = 800, 180
+    tau_y = base - TAU / .7 * bar_h
+
+    toks, bars, flags = [], [], []
+    for (sx, w, tok, src), d in zip(slots, DELTA):
+        fill, ink = (T_FILL, T_INK) if src == "t" else (S_FILL, S_INK)
+        stroke = T if src == "t" else S
+        toks.append(f'<rect x="{sx}" y="{ty}" width="{w}" height="{th}" rx="13" fill="{fill}" stroke="{stroke}" stroke-width="4"/>'
+                    f'<text x="{sx+w/2}" y="{ty+40}" text-anchor="middle" class="tok" fill="{ink}">{tok}</text>')
+        bh = d / .7 * bar_h
+        bars.append(f'<rect x="{sx+8}" y="{base-bh}" width="{w-16}" height="{bh}" rx="5" fill="{stroke}" opacity="{1 if src == "t" else .75}"/>')
+        if src == "t":   # inflection flag above each teacher token
+            cx = sx + w / 2
+            flags.append(f'<path d="M{cx},{ty-10} v-34" stroke="{T}" stroke-width="4"/>'
+                         f'<polygon points="{cx-9},{ty-40} {cx+9},{ty-40} {cx},{ty-26}" fill="{T}"/>')
+
+    # arrows from the two models into the tape
+    first_t = [s for s in slots if s[3] == "t"][1]   # point the teacher arrow at "Lina"
+    arrows = (
+        # student -> tape start (writes by default)
+        f'<path d="M265,640 C340,640 380,{ty+th/2} {x0-14},{ty+th/2}" fill="none" stroke="{S}" stroke-width="6"/>'
+        f'<polygon points="{x0-14},{ty+th/2-10} {x0-14},{ty+th/2+10} {x0+2},{ty+th/2}" fill="{S}"/>'
+        f'<text x="292" y="676" class="lab" fill="{S_INK}">writes by default</text>'
+        # teacher -> first inflection token
+        f'<path d="M265,290 C{first_t[0]-40},290 {first_t[0]+first_t[1]/2},330 {first_t[0]+first_t[1]/2},{ty-54}" fill="none" '
+        f'stroke="{T}" stroke-width="6" stroke-dasharray="14 10"/>'
+    )
+    callout = (f'<g transform="translate({first_t[0]+first_t[1]/2+34},318)">'
+               f'<text class="call" fill="{T_INK}">inflection token: δ<tspan class="subt" dy="8">t</tspan><tspan dy="-8"> &gt; τ</tspan></text>'
+               f'<text y="32" class="lab" fill="{MUTED}">teacher and student disagree,</text>'
+               f'<text y="60" class="lab" fill="{MUTED}">so the teacher writes it</text></g>')
+    doc = (f'<g transform="translate(232,192) rotate(-8) scale(.62)"><rect width="96" height="122" rx="8" fill="#fff" stroke="{INK}" stroke-width="6"/>'
+           + "".join(f'<rect x="16" y="{22+i*18}" width="{64 - (i % 2) * 18}" height="7" rx="3" fill="{T}"/>' for i in range(5)) + '</g>')
+    legend_y = 860
     return f'''
 <svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">
-  <defs>
-    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/>
-      <feColorMatrix values="0 0 0 0 .12  0 0 0 0 .1  0 0 0 0 .08  0 0 0 .09 0"/></filter>
-  </defs>
-  <rect width="{W}" height="{H}" fill="{PAPER}"/>
-  <clipPath id="frame"><rect x="44" y="44" width="{W-88}" height="{H-88}" rx="18"/></clipPath>
-  <g clip-path="url(#frame)">{rays}{deco}</g>
-  <rect width="{W}" height="{H}" filter="url(#grain)"/>
-  <rect x="26" y="26" width="{W-52}" height="{H-52}" rx="26" fill="none" stroke="{INK}" stroke-width="8"/>
-  <rect x="44" y="44" width="{W-88}" height="{H-88}" rx="18" fill="none" stroke="{INK}" stroke-width="3"/>
+  <rect width="{W}" height="{H}" fill="{BG}"/>
+  <text x="80" y="118" class="title">Speculative Self-Distillation</text>
+  <text x="82" y="170" class="sub">The student writes the rollout. The teacher takes over only where the document changes the next token.</text>
 
-  <text x="330" y="148" class="title">Speculative</text>
-  <text x="330" y="236" class="title">Self-Distillation</text>
-  <text x="334" y="296" class="sub">the student writes · the teacher steps in where it matters</text>
+  {robot(190, 300, T_FILL, "#fff4ea", teacher=True)}{doc}
+  <text x="190" y="392" text-anchor="middle" class="who" fill="{T_INK}">Teacher</text>
+  <text x="190" y="420" text-anchor="middle" class="lab" fill="{MUTED}">reads the document</text>
+  {robot(190, 640, S_FILL, "#f2fbff")}
+  <text x="190" y="732" text-anchor="middle" class="who" fill="{S_INK}">Student</text>
+  <text x="190" y="760" text-anchor="middle" class="lab" fill="{MUTED}">closed-book</text>
 
-  {robot(170, 300, T_FILL, "#fff4ea", teacher=True)}
-  {robot(170, 560, S_FILL, "#f2fbff")}
-  {doc}
-  <path d="M170,384 v66" stroke="{INK}" stroke-width="5" stroke-dasharray="10 10"/>
+  {arrows}{callout}
+  <rect x="{x0-4}" y="{ty-112}" width="0" height="0"/>
+  <text x="{x0}" y="{ty-78}" class="prompt" fill="{MUTED}">“Tell me about the marketing team.”</text>
+  {"".join(flags)}{"".join(toks)}
 
-  {"".join(toks)}
-  <line x1="300" y1="790" x2="{x}" y2="790" stroke="{INK}" stroke-width="5"/>
+  <line x1="{x0}" y1="{base}" x2="{x_end}" y2="{base}" stroke="{INK}" stroke-width="3"/>
   {"".join(bars)}
-  <line x1="290" y1="{tau_y}" x2="{x+10}" y2="{tau_y}" stroke="{RED}" stroke-width="6" stroke-dasharray="18 12"/>
-  <text x="{x+24}" y="{tau_y+14}" class="tau">τ</text>
-  <text x="170" y="790" text-anchor="middle" class="delta">δₜ</text>
+  <line x1="{x0-10}" y1="{tau_y}" x2="{x_end+10}" y2="{tau_y}" stroke="{RED}" stroke-width="4" stroke-dasharray="14 10"/>
+  <text x="{x_end+22}" y="{tau_y+12}" class="tau">τ</text>
+  <text x="{x0-24}" y="{base-60}" text-anchor="end" class="lab" fill="{MUTED}">divergence δ<tspan class="subs" dy="6">t</tspan></text>
+  <text x="{x0-24}" y="{base-30}" text-anchor="end" class="lab" fill="{MUTED}">per token</text>
+
+  <g transform="translate({x0},{legend_y})">
+    <rect width="26" height="22" rx="5" y="-18" fill="{S_FILL}" stroke="{S}" stroke-width="3"/><text x="38" class="lab" fill="{INK}">student token</text>
+    <rect x="250" width="26" height="22" rx="5" y="-18" fill="{T_FILL}" stroke="{T}" stroke-width="3"/><text x="288" class="lab" fill="{INK}">teacher token</text>
+    <line x1="500" x2="540" y1="-7" y2="-7" stroke="{RED}" stroke-width="4" stroke-dasharray="10 7"/><text x="552" class="lab" fill="{INK}">threshold τ</text>
+  </g>
 </svg>'''
 
 
 HTML = """<html><head>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@700&family=Inter:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600&family=JetBrains+Mono:wght@700&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
- body{margin:0} .title{font:400 92px 'DM Serif Display',serif;fill:%(ink)s}
- .sub{font:600 30px Inter,sans-serif;fill:#5b6276;letter-spacing:.01em}
- .tok{font:700 29px 'JetBrains Mono',monospace;fill:%(ink)s} .ctx{font:italic 400 40px 'DM Serif Display',serif;fill:%(ink)s}
- .tau{font:italic 400 54px 'DM Serif Display',serif;fill:%(red)s} .delta{font:italic 400 50px 'DM Serif Display',serif;fill:%(ink)s}
+ body{margin:0} .title{font:600 70px Literata,serif;fill:%(ink)s} .sub{font:500 27px Inter,sans-serif;fill:%(muted)s}
+ .tok{font:700 26px 'JetBrains Mono',monospace} .who{font:700 30px Inter,sans-serif} .lab{font:500 22px Inter,sans-serif}
+ .call{font:700 26px Inter,sans-serif} .subt{font-size:18px} .subs{font-size:15px} .prompt{font:italic 500 25px Inter,sans-serif}
+ .tau{font:italic 600 40px Literata,serif;fill:%(red)s}
 </style></head><body>%(svg)s</body></html>"""
 
 
@@ -102,7 +122,7 @@ def main():
     with sync_playwright() as pw:
         b = pw.chromium.launch()
         pg = b.new_page(viewport={"width": W, "height": H}, device_scale_factor=1)
-        pg.set_content(HTML % {"ink": INK, "red": RED, "svg": scene()}, wait_until="networkidle")
+        pg.set_content(HTML % {"ink": INK, "muted": MUTED, "red": RED, "svg": scene()}, wait_until="networkidle")
         pg.evaluate("document.fonts.ready")
         pg.wait_for_timeout(300)
         pg.screenshot(path=str(OUT))

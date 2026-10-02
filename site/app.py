@@ -14,6 +14,7 @@ from method_anim import MethodFigure
 HERE = Path(__file__).resolve().parent
 PAPER = "https://openreview.net/pdf?id=HczpgMR6S3"
 CODE = "https://anonymous.4open.science/r/Speculative-Self-Distillation/"
+POSTER = "static/media/ssd_poster.pdf"   # copy of poster/poster.pdf
 TITLE = "Speculative Self-Distillation"
 SUBTITLE = "Efficient knowledge internalization with per-token mixed-policy distillation"
 DESC = ("SSD lets the student write its own training rollouts and lets the teacher take over only at tokens where the "
@@ -103,7 +104,7 @@ def On(): return Span("on-policy", cls="k-on")
 def header():
     return Header(A(TITLE, href="#top", cls="wordmark"),
                   Nav(A("Paper", href=PAPER, target="_blank", rel="noopener"), A("Code", href=CODE, target="_blank", rel="noopener"),
-                      A("Cite", href="#citation")), cls="site-header")
+                      A("Poster", href=POSTER, target="_blank", rel="noopener"), A("Cite", href="#citation")), cls="site-header")
 
 
 def heading():
@@ -117,6 +118,7 @@ def heading():
               cls="affiliations"), cls="publish-metadata"),
         Div(A(NotStr(ICON_PAPER), "Paper", href=PAPER, target="_blank", rel="noopener"), Span("·", cls="sep"),
             A(NotStr(ICON_CODE), "Code", href=CODE, target="_blank", rel="noopener"), Span("·", cls="sep"),
+            A("Poster", href=POSTER, target="_blank", rel="noopener"), Span("·", cls="sep"),
             A("Cite", href="#citation"), cls="resource-links"),
         Div(Img(src="static/logos/stanford_color.png", alt="Stanford University"), Img(src="static/logos/eth.svg", alt="ETH Zürich", cls="eth"),
             cls="logo-row"),
