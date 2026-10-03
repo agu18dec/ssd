@@ -71,7 +71,7 @@ hdrs = (
     Link(rel="icon", type="image/png", href="static/favicon.png"),
     Link(rel="stylesheet", href="static/site.css"),
     Script(src="static/anim.js", defer=True),
-    Socials(title=TITLE, site_name=TITLE, description=DESC, image="static/media/thumbnail.png", url=""),
+    Socials(title=TITLE, site_name=TITLE, description=DESC, image="static/media/cover.png", url=""),
 )
 app, rt = fast_app(pico=False, hdrs=hdrs, static_path=str(HERE), live=False, default_hdrs=False)
 
@@ -322,8 +322,8 @@ def index(capture: str = ""):
         return Title(f"SSD · {capture}"), Main(CAPTURE[capture](), cls=f"capture-main cap-{capture}", data_capture=capture)
     return (Title(TITLE), Meta(name="description", content=DESC),
             header(), heading(),
-            Div(Img(src="static/media/thumbnail.png", alt="Speculative Self-Distillation: a student and a teacher robot writing a "
-                    "shared token sequence, with the teacher's tokens where the divergence crosses the threshold"), cls="post-cover"),
+            Div(Img(src="static/media/cover.png", alt="A student robot writes a path of blue tokens while a teacher robot in a "
+                    "graduation cap, reading a book, places orange tokens at the forks; the abandoned branch fades out"), cls="post-cover"),
             Div(Nav(Ul(*[Li(A(t, href=f"#{i}", data_sec=i)) for i, t in TOC]), cls="left-toc", aria_label="Table of contents"),
                 article(Notes()), cls="post-shell"),
             Footer(P("Speculative Self-Distillation · Stanford University and ETH Zürich · 2026"), cls="site-footer"))

@@ -41,7 +41,7 @@ def test_data_matches_paper_numbers():
 
 
 def test_static_assets_exist():
-    for f in ["static/site.css", "static/anim.js", "static/logos/stanford_color.png", "static/logos/eth.svg", "static/media/thumbnail.png"]:
+    for f in ["static/site.css", "static/anim.js", "static/logos/stanford_color.png", "static/logos/eth.svg", "static/media/cover.png"]:
         assert (ROOT / "site" / f).exists()
     for _, m in app.MEDIA:
         assert (ROOT / "site/static/media" / f"{m}.gif").exists()
