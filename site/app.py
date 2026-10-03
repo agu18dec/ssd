@@ -198,9 +198,6 @@ def article(n: Notes):
           "the teacher's distribution falls back to one close to the student's, and there is little left to correct."),
         P("Most of the supervised tokens in on-policy training are therefore spent on positions where the teacher adds little "
           "information."),
-        P("This raises an obvious question: why not stop on-policy rollouts after ~20 tokens? Truncation would save tokens, but "
-          "the student would still continue down its own path at the first inflection, so content further into the document "
-          "would remain out of reach. We have not run this ablation; it is a natural comparison to add."),
 
         H2("Inflection tokens", id="inflection"),
         P("In the example of Figure 3, asked about the marketing team of the company described in the memo, the student and the "
@@ -262,7 +259,7 @@ def article(n: Notes):
         P("Supervised tokens do not capture everything. SSD needs the teacher's next-token distribution at every decoding step, "
           "whereas on-policy training can score a finished rollout with a single parallel teacher pass. Because teacher and "
           "student share weights, both forward passes can run in the same batch at each step, but the teacher pass still happens "
-          "during generation. A wall-clock comparison is on our list."),
+          "during generation."),
         Fig(F.headline(), B("SSD reaches on-policy accuracy with 34–57% fewer supervised tokens. "), "Test accuracy against cumulative "
             "supervised tokens on Company Memo, Wikipedia and Science Q&A for the best off-policy baseline (SFT or FKL), on-policy "
             "SDFT and SSD. Arrows mark the savings at the on-policy plateau. The slider compares the methods at the same budget, as a "
