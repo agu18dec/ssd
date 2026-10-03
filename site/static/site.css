@@ -52,6 +52,9 @@ body { margin: 0; font-family: var(--serif); font-size: 17px; line-height: 1.6; 
 .logo-row { margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 36px; }
 .logo-row img { height: 66px; width: auto; }
 .logo-row img.eth { height: 22px; }
+.tldr { max-width: 660px; margin: 1.8rem auto 0; padding: .9rem 1.2rem; text-align: left; font-family: var(--serif); font-size: 16.5px;
+  line-height: 1.55; background: var(--bg-subtle); border-left: 3px solid var(--red); border-radius: 4px; }
+.tldr b { font-family: var(--sans); font-size: 13px; letter-spacing: .06em; color: var(--red); }
 .post-cover { max-width: 900px; margin: 2.2rem auto 0; padding: 0 1.25rem; }
 .post-cover img { display: block; width: 100%; height: auto; border-radius: 6px; }
 
