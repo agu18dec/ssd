@@ -36,8 +36,8 @@ BIBTEX = r"""@misc{talaei2026ssd,
 REFS = {
     "liu2024lost": ("Lost in the Middle: How Language Models Use Long Contexts", "Liu et al.", 2024, "https://arxiv.org/abs/2307.03172"),
     "snell2023": ("Learning by Distilling Context", "Snell, Klein and Zhong", 2023, "https://arxiv.org/abs/2209.15189"),
-    "cartridges": ("Cartridges: Lightweight and General-Purpose Long Context Representations via Self-Study", "Eyuboglu et al.", 2025,
-                   "https://arxiv.org/abs/2506.06266"),
+    "kujanpaa": ("Efficient Knowledge Injection in LLMs via Self-Distillation", "Kujanpää, Marttinen, Valpola and Ilin", 2025,
+                 "https://arxiv.org/abs/2412.14964"),
     "entigraph": ("Synthetic Continued Pretraining", "Yang et al.", 2025, "https://arxiv.org/abs/2409.07431"),
     "sdft": ("Self-Distillation Enables Continual Learning", "Shenfeld, Damani, Hübotter and Agrawal", 2026, "https://arxiv.org/abs/2601.19897"),
     "skd": ("Speculative Knowledge Distillation: Bridging the Teacher-Student Gap Through Interleaved Sampling", "Xu et al.", 2025,
@@ -129,7 +129,7 @@ def heading():
 TOC = [("setup", "Self-distillation and who writes the rollout"), ("why", "Where on-policy training spends its tokens"),
        ("inflection", "Inflection tokens"), ("method", "Speculative Self-Distillation"), ("results", "Results"),
        ("knob", "Choosing τ"), ("curriculum", "The teacher's share decreases"), ("forgetting", "Forgetting"),
-       ("routing", "Switching at inference time"), ("citation", "Citation")]
+       ("citation", "Citation")]
 
 
 def article(n: Notes):
@@ -140,10 +140,10 @@ def article(n: Notes):
           "query, it competes for limited context, and models do not always make good use of evidence that is in their "
           "context.", *n.cite("liu2024lost"), " When the same knowledge is needed repeatedly, it is more economical to train it "
           "into the weights once."),
-        P("Self-distillation is a simple way to do this. The model is given the document and acts as a teacher; the same model "
+        P("Self-distillation does this without labels or a larger model. The model is given the document and acts as a teacher; the same model "
           "without the document is the student, and it is trained to reproduce the teacher's next-token distributions.",
           *n.cite("snell2023"), " Existing methods differ mainly in who generates the text the student is trained on. Off-policy "
-          "methods train on text written by the teacher,", *n.cite("cartridges", "entigraph"), " while on-policy methods such as "
+          "methods train on text written by the teacher,", *n.cite("kujanpaa"), " while on-policy methods such as "
           "SDFT let the student write and use the teacher only to score each token.", *n.cite("sdft"), " In standard "
           "teacher–student distillation, Speculative Knowledge Distillation (SKD) mixes the two inside a single sequence, letting "
           "the teacher replace student tokens that it considers unlikely.", *n.cite("skd"), " We bring this per-token view to "
@@ -178,7 +178,7 @@ def article(n: Notes):
           "training reaches higher accuracy, but it is considerably slower.", *n.cite("tm_opd")),
 
         H2("Where on-policy training spends its tokens", id="why"),
-        P("To understand where the cost comes from, we look at the per-token loss along a rollout. It measures how much the teacher "
+        P("We trace the cost of on-policy training through the per-token loss along a rollout. It measures how much the teacher "
           "and the student disagree at a position, and therefore how large an update that token produces. We refer to it as the ",
           Strong("signal"), ". Figure 2 compares off- and on-policy training on the Wikipedia task."),
         Fig(F.signal(), B("On-policy rollouts lose their training signal after a few tokens. "), "Off- and on-policy self-distillation "
@@ -186,7 +186,7 @@ def article(n: Notes):
             "plateaus lower. Middle: average per-token loss during training; off-policy rollouts start with more than twice the "
             "signal and use it up quickly. Right: per-token loss by position within a rollout; along on-policy rollouts it drops "
             "from around 2 to below 1 within the first 15 tokens, while off-policy rollouts stay high."),
-        P("Three things are visible. Off-policy training converges about five times faster, consistent with prior work, but "
+        P("Off-policy training converges about five times faster, consistent with prior work, but "
           "on-policy training reaches a higher final accuracy. Off-policy rollouts start with more than twice the per-token signal "
           "and reduce it quickly. And along on-policy rollouts, the signal is concentrated in the first few tokens. The student "
           "writes without the document, so it soon reaches states that have little to do with it; conditioned on such a prefix, "
@@ -195,7 +195,7 @@ def article(n: Notes):
           "information."),
 
         H2("Inflection tokens", id="inflection"),
-        P("Figure 3 shows a concrete case. Asked about the marketing team of the company described in the memo, the student and the "
+        P("In the example of Figure 3, asked about the marketing team of the company described in the memo, the student and the "
           "teacher agree on the opening words “Marketing team is”. At the fourth token they diverge: the teacher, which has read "
           "the memo, continues with “led by Lina Okafor”, while the student writes the generic “mainly focused on creating the …”. "
           "We call such a position an ", Strong("inflection position"), ". Given a rollout and a threshold τ, position $t$ is a "
@@ -272,20 +272,19 @@ def article(n: Notes):
             "accuracy at close to off-policy cost. The curve is a guide to the eye; hover over a point for its values.", wide=False),
 
         H2("The teacher's share decreases during training", id="curriculum"),
-        P("A good switching rule should not require a hand-designed schedule for how much the teacher participates. Figure 6 shows "
-          "that SSD adjusts on its own. Early in training the student and the teacher disagree at many positions, and the teacher "
+        P("SSD has no schedule for how much the teacher participates, and Figure 6 shows that none is needed. Early in training the student and the teacher disagree at many positions, and the teacher "
           "writes a large share of each rollout, up to 40% of tokens at the lowest threshold. As the student learns the document, "
           "the switch fires less often and teacher involvement decays for every threshold."),
         Fig(F.curriculum(), B("Teacher involvement decays without a schedule. "), "SSD on Company Memo with four JSD thresholds. Left: "
             "fraction of rollout tokens written by the teacher at each training step. Right: mean response length. Lower thresholds "
             "use the teacher more at the start, and all runs move toward student-written rollouts and similar response lengths."),
-        P("Response length changes in the same way. With a high threshold the student keeps control for longer before enough "
+        P("Response lengths follow the same pattern. With a high threshold the student keeps control for longer before enough "
           "divergence builds up to trigger the teacher, so early rollouts are long and variable. As training proceeds, lengths "
           "settle and converge across thresholds. The teacher is used heavily while the student lacks the knowledge, and its share "
           "falls as the student learns, until training is close to on-policy."),
 
         H2("Forgetting", id="forgetting"),
-        P("Learning new knowledge can erode existing capabilities. SDFT showed that on-policy self-distillation forgets less than "
+        P("We also measure how much each method degrades the model's general capabilities. SDFT showed that on-policy self-distillation forgets less than "
           "supervised fine-tuning,", *n.cite("sdft"), " and because SSD keeps rollouts close to the student's distribution we "
           "expected it to share this property. With Qwen3-4B we saw little forgetting under any method, likely because the model "
           "was already post-trained on data resembling the evaluation suite. We therefore follow the SDFT protocol and fine-tune "
@@ -298,26 +297,13 @@ def article(n: Notes):
           "SDFT loses 4.5 at comparable in-domain accuracy. SSD has both the highest in-domain accuracy (71.6, against 68.4 for "
           "SDFT) and the smallest loss (−1.4), while using 22% fewer supervised tokens than SDFT."),
 
-        H2("Switching at inference time", id="routing"),
-        P("The switching rule can also be applied at inference, without any training, which shows how much of the teacher's "
-          "advantage is carried by a few tokens. On 507 SciKnowEval chemistry questions we decode with two forward passes of "
-          "Qwen3-4B-Instruct per step: the student sees only the question, the teacher also sees the reference answer, and the JSD "
-          "between their next-token distributions decides which of them emits the token."),
-        Fig(F.routing(), B("A few teacher tokens recover most of the teacher's accuracy. "), "JSD-routed decoding on 507 SciKnowEval "
-            "chemistry questions with Qwen3-4B-Instruct, without training. Bars show accuracy for the student alone, four "
-            "thresholds, and the teacher alone; the right column gives the share of tokens emitted by the teacher.", wide=False),
-        P("The student alone answers 13.8% of the questions correctly and the teacher 80.3%. Routing 15.7% of tokens to the teacher "
-          "(τ = 0.1) raises accuracy to 74.0%, and even at τ = 0.5, with 2.7% teacher tokens, accuracy is 51.9%. Responses also "
-          "become shorter as the teacher intervenes more. Much of the teacher's advantage is concentrated in a small number of "
-          "positions, which is the property SSD relies on during training."),
-
         H2("Citation", id="citation"),
         Div(Button("copy", cls="copy", type="button"), Pre(BIBTEX, cls="citation-block bib"), cls="bibwrap"),
         cls="content")
 
 
 CAPTURE = {"method": MethodFigure, "fork": F.fork, "signal": F.signal, "headline": F.headline,
-           "tau_frontier": F.tau_frontier, "curriculum": F.curriculum, "forgetting": F.forgetting, "routing": F.routing}
+           "tau_frontier": F.tau_frontier, "curriculum": F.curriculum, "forgetting": F.forgetting}
 
 
 @rt

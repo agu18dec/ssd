@@ -91,7 +91,10 @@ def tau_frontier():
     on = next(q for q in pts if q["kind"] == "on")
     x0, x1, top = 342, on["tokens"] - 14, on["acc"]
     guide = [(p.sx(x), p.sy(top - (top - 89.3) * math.exp(-(x - x0) / 30))) for x in [x0 + (x1 - x0) * i / 80 for i in range(81)]]
-    p.free.append(Path(d="M" + "L".join(f"{a:.1f},{b:.1f}" for a, b in guide), cls="frontier drawp", pathLength=1))
+    # the guide grows with the points (dots appear at data-at .02 .. .82) and carries a spearhead at its tip
+    p.free.append(Path(d="M" + "L".join(f"{a:.1f},{b:.1f}" for a, b in guide), cls="frontier drawp", id="tf-guide",
+                       data_p0=".03", data_p1=".86"))
+    p.free.append(G(Path(d="M2,0 L-20,-11 L-13,0 L-20,11 Z"), cls="arrowhead", data_for="tf-guide"))
     marks = []
     for j, q in enumerate(ssd):
         x, y = p.sx(q["tokens"]), p.sy(q["acc"])

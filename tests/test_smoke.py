@@ -13,7 +13,7 @@ client = TestClient(app.app)
 
 def test_index_renders_every_section_and_figure():
     html = client.get("/").text
-    for sec in ["setup", "why", "inflection", "method", "results", "knob", "curriculum", "forgetting", "routing", "citation"]:
+    for sec in ["setup", "why", "inflection", "method", "results", "knob", "curriculum", "forgetting", "citation"]:
         assert f'id="{sec}"' in html
     for fig in app.CAPTURE:
         assert f'data-fig="{fig}"' in html

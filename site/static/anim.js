@@ -25,7 +25,12 @@
     });
     const ro = QA('[data-ro]', el).map(e => { const [i, k] = e.dataset.ro.split(':'); return { e, i: +i, k, fmt: e.dataset.fmt }; });
     const ats = QA('[data-at]', el).map(e => ({ e, at: +e.dataset.at, grow: QA('.grow', e), scale: !e.querySelector('.grow') && e.classList.contains('pt') }));
-    const draws = QA('path.drawp', el);
+    // draw-on paths: dash length from the real geometry; optional .arrowhead[data-for=id] rides the growing tip
+    const draws = QA('path.drawp', el).map(d => {
+      const L = d.getTotalLength();
+      d.style.strokeDasharray = `${L} ${L}`;
+      return { d, L, p0: +(d.dataset.p0 || 0), p1: +(d.dataset.p1 || .85), head: d.id ? Q(`.arrowhead[data-for="${d.id}"]`, el) : null };
+    });
     const budget = Q('input.budget', el), budgetV = Q('.budget-v', el);
 
     const yAt = (pts, x) => {
@@ -59,7 +64,15 @@
         if (a.scale) a.e.style.transform = `scale(${.55 + .45 * k})`;
         a.grow.forEach(g => g.style.transform = `scaleX(${k})`);
       });
-      draws.forEach(d => d.style.strokeDashoffset = 1 - eio(clamp(p / .85)));
+      draws.forEach(({ d, L, p0, p1, head }) => {
+        const k = clamp((p - p0) / (p1 - p0));
+        d.style.strokeDashoffset = L * (1 - k);
+        if (head) {
+          const at = Math.max(L * k, 1), a = d.getPointAtLength(at), b = d.getPointAtLength(Math.max(at - 4, 0));
+          head.setAttribute('transform', `translate(${a.x} ${a.y}) rotate(${Math.atan2(a.y - b.y, a.x - b.x) * 180 / Math.PI})`);
+          head.style.opacity = k > .02 ? 1 : 0;
+        }
+      });
       if (budget) { budget.value = Math.round(p * 1000); budgetV.textContent = Math.round(p * 100) + '%'; }
     }
     const fig = { el, dur, loop, render: t => renderP(clamp(t / dur)) };
